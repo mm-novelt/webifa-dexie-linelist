@@ -1,0 +1,308 @@
+<div class="container mx-auto pt-6">
+
+
+  <div class="block bg-white border border-gray-200 rounded-lg relative">
+
+    <div class="flex flex-column sm:flex-row flex-wrap space-x-4 sm:space-y-0 items-center justify-start p-6">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
+          <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor"
+               viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <input #areaInput (keydown.enter)="searchFullText(areaInput.value,['case.bid','case.specimen.bid','case.patientName'])"
+               type="text" id="table-search"
+               class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="Search: Bid, Specimen BID, Patient name">
+      </div>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
+          <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor"
+               viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <input #patientNameInput (keydown.enter)="searchFullText(patientNameInput.value, ['area.name'], 'casesRelation')"
+               type="text" id="bid-search"
+               class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-50 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="Search by Area name">
+      </div>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
+          <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor"
+               viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <input #finalResultInput (keydown.enter)="searchFullText(finalResultInput.value, ['case.finalResult'])"
+               type="text" id="finalResultInput-search"
+               class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-50 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="Search in final result">
+      </div>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
+          <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor"
+               viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <input  #labsertialRangeInput (keydown.enter)="searchByRange(labsertialRangeInput.value, ['case.specimen.labSerial'])" type="text"
+                id="ageRangeInput-search"
+                class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-50 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder="Search Lab Serial">
+
+        <div data-tooltip-target="tooltip-labserialinputrange" data-tooltip-placement="bottom" class="absolute inset-y-0 right-0 rtl:inset-r-0 rtl:right-0 flex items-center pe-3">
+          <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+          </svg>
+
+        </div>
+
+        <div id="tooltip-labserialinputrange" role="tooltip" class="absolute z-10 invisible inline-block w-[400px] px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+          <span class="block mb-2">To search for a specific value enter: <span class="bg-gray-100 text-gray-800 text-xs font-medium ms-2 px-2 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">1000</span></span>
+          <span class="block mb-2">To search within a value range enter: <span class="bg-gray-100 text-gray-800 text-xs font-medium ms-2 px-2 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">1000-2000</span></span>
+          <span class="block">To search for several specific values enter: <span class="bg-gray-100 text-gray-800 text-xs font-medium ms-2 px-2 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">1000,1001,1004</span></span>
+          <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+      </div>
+
+      <select #adeqInput (change)="searchDirect(adeqInput, 'adeq')" id="adeqInput"
+              class="w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        <option selected value="">Select an ADEQ state</option>
+        <option value="ADEQ">ADEQ</option>
+        <option value="INADEQ">INADEQ</option>
+        <option value="UNKNOWN">UNKNOWN</option>
+        <option value="PENDING">PENDING</option>
+      </select>
+
+      <div class="!ml-auto">
+        <button #yearSelector
+                id="dropdownDefaultButton"
+                [class.pointer-events-none]="displayLoader()"
+                [class.opacity-50]="displayLoader()"
+                data-dropdown-toggle="dropdown"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
+          You watch {{ year }}
+          <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+        </button>
+
+        <!-- Dropdown menu -->
+        <div id="dropdown" #yearDropdown  class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+            <li>
+              <a (click)="changeYear(2024, yearSelector, yearDropdown);" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">2024</a>
+            </li>
+            <li>
+              <a (click)="changeYear(2023, yearSelector, yearDropdown)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">2023</a>
+            </li>
+            <li>
+              <a (click)="changeYear(2022, yearSelector, yearDropdown)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">2022</a>
+            </li>
+            <li>
+              <a (click)="changeYear(2021, yearSelector, yearDropdown)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">2021</a>
+            </li>
+            <li>
+              <a (click)="changeYear(2020, yearSelector, yearDropdown)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">2020</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative overflow-x-hidden">
+      <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <tr>
+          <th scope="col" class="px-6 py-3">
+            BID
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Year
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Area
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Patient name
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Age
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Specimens
+          </th>
+          <th scope="col" class="px-6 py-3">
+            ADEQ
+          </th>
+          <th scope="col" class="px-6 py-3">
+            Final Result
+          </th>
+          <th scope="col" class="px-6 py-3 text-right">
+            Created At
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+
+          @for (item of dataView(); track item.id) {
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 h-[78px]">
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white w-14">
+                <span
+                  class="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">{{ item.bid }}</span>
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white w-8">
+                {{ item.year }}
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[128px]">
+                {{ item.area?.name }}
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white md:max-w-[142px]]">
+                {{ item.patientName }}
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white w-8">
+                {{ item.age }}
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                @for (specimen of item.specimens; track specimen.id) {
+                  <span
+                    class="block bg-green-100 mt-2 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
+                    {{ specimen.bid }}
+
+                    ( {{ specimen.labSerial }} )
+                  </span>
+                } @empty {
+                  <span
+                    class="bg-gray-100 text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">No specimen</span>
+                }
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white w-8">
+                <span class="bg-pink-100 text-pink-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-pink-900 dark:text-pink-300">
+                  {{ item.adeq }}
+                </span>
+              </td>
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <span
+                  class="bg-purple-100 text-purple-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-purple-900 dark:text-purple-300">
+                  {{ item.finalResult }}
+                </span>
+              </td>
+              <td
+                class="px-6 py-2 text-right font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[140px]">
+                {{ item.created | date:'dd/MM/yy - hh:mm' }}
+              </td>
+            </tr>
+          } @if(dataView().length === 0 && filterActive() && allDataAvailable()) {
+          <tr>
+            <td class="px-6 py-2 text-center" colspan="1000">
+              No data is available for this filters
+            </td>
+          </tr>
+        }
+        </tbody>
+        <tfoot>
+          @if (!allDataAvailable() && filterActive()) {
+
+            <tr>
+              <td class="px-6 py-4 text-center" colspan="1000">
+                <div role="status" class="flex items-center justify-center">
+                  <svg aria-hidden="true" class="inline w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                    <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                  </svg>
+                  <span class="ml-3 text-md">Other data is currently being analyzed, please wait</span>
+                </div>
+              </td>
+            </tr>
+
+          } @else if (allDataAvailable() && filterActive() && newDataAvailable()) {
+
+            <tr>
+              <td class="px-6 py-4 text-center" colspan="1000">
+                New filtered data is available
+                <a class="font-medium text-sm text-blue-600 dark:text-blue-500 hover:underline" (click)="updateNewData()">
+                  Update results
+                </a>
+              </td>
+            </tr>
+          }
+        </tfoot>
+      </table>
+
+      <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-6"
+           aria-label="Table navigation">
+        <span
+          class="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:inline md:w-auto">Showing <span
+          class="font-semibold text-gray-900 dark:text-white">
+          {{ ((this.currentPage() - 1) * 10) }} - {{ ((this.currentPage() - 1) * 10 + 10) }}
+        </span> of <span class="font-semibold text-gray-900 dark:text-white">{{ this.total() }}</span></span>
+        <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
+          <li class="flex items-center text-xs mr-3">
+
+            @if (allDataAvailable()) {
+              All Data loaded
+              <svg class="w-4 h-4 text-gray-800 dark:text-white " aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                   width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 11.917 9.724 16.5 19 7.5"/>
+              </svg>
+            } @else {
+              Data loading
+              <svg class="w-4 h-4 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                   width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.5 4h-13m13 16h-13M8 20v-3.333a2 2 0 0 1 .4-1.2L10 12.6a1 1 0 0 0 0-1.2L8.4 8.533a2 2 0 0 1-.4-1.2V4h8v3.333a2 2 0 0 1-.4 1.2L13.957 11.4a1 1 0 0 0 0 1.2l1.643 2.867a2 2 0 0 1 .4 1.2V20H8Z"/>
+              </svg>
+            }
+          </li>
+
+          <li>
+            <button (click)="changePage(-1)"
+                    [disabled]="currentPage() === 1"
+                    [class.opacity-25]="currentPage() === 1"
+                    class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              Previous
+            </button>
+          </li>
+          <li>
+            <button (click)="changePage(1)"
+                    class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              Next
+            </button>
+          </li>
+
+        </ul>
+      </nav>
+
+      @if (displayLoader()) {
+        <div class="absolute top-0 left-0 right-0 bottom-0 bg-white/90 flex items-center justify-center">
+          <div role="status">
+            <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                 viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                fill="currentColor"/>
+              <path
+                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                fill="currentFill"/>
+            </svg>
+            <span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
