@@ -59,7 +59,9 @@ export class GettingStartedComponent {
       const config = this.query.data();
       if (!config) return;
 
-      await this.db.initialize(config.tables);
+      if (!this.db.isInitialized) {
+        await this.db.initialize(config.tables);
+      }
 
       const entries = Object.entries(config.fetch);
       if (entries.length === 0) {
@@ -74,10 +76,16 @@ export class GettingStartedComponent {
       this.tableProgressSignals.set(progressSignals);
       this.isFetching.set(true);
 
-      for (let i = 0; i < entries.length; i++) {
-        const [tableName, url] = entries[i];
-        await this.dataFetchRepository.fetchAndStore(tableName, url, progressSignals[i]);
-      }
+      await Promise.all(
+        entries.map(async ([tableName, url], i) => {
+          const count = await this.db.instance.table(tableName).count();
+          if (count > 0) {
+            progressSignals[i].set({ tableName, recordsLoaded: count, total: count, percent: 100, done: true });
+          } else {
+            await this.dataFetchRepository.fetchAndStore(tableName, url, progressSignals[i]);
+          }
+        }),
+      );
 
       this.isFetching.set(false);
       this.isDone.set(true);

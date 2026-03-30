@@ -6,10 +6,10 @@ use Faker\Factory;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
-use Symfony\Component\Uid\Ulid;
 
 class Kernel extends BaseKernel
 {
@@ -27,15 +27,30 @@ class Kernel extends BaseKernel
         $routes->import(static::class, 'attribute');
     }
 
+    private function makeSpecimenUlid(int $index): string
+    {
+        return sprintf('01SPEC%020d', $index);
+    }
+
+    private function makeAreaUlid(int $index): string
+    {
+        return sprintf('01AREA%020d', $index);
+    }
+
+    private function makeCaseUlid(int $index): string
+    {
+        return sprintf('01CASE%020d', $index);
+    }
+
     #[Route('/api/data/areas', name: 'api_data_areas')]
-    public function dataAreas(\Symfony\Component\HttpFoundation\Request $request): JsonResponse
+    public function dataAreas(Request $request): JsonResponse
     {
         usleep(300);
-        $total     = 30000;
-        $perPage   = 1000;
+        $total      = 30000;
+        $perPage    = 1000;
         $totalPages = (int) ceil($total / $perPage);
-        $page      = max(1, min((int) $request->query->get('page', 1), $totalPages));
-        $offset    = ($page - 1) * $perPage;
+        $page       = max(1, min((int) $request->query->get('page', 1), $totalPages));
+        $offset     = ($page - 1) * $perPage;
 
         $faker = Factory::create('en_EN');
         $faker->seed(42);
@@ -53,12 +68,116 @@ class Kernel extends BaseKernel
                 $name = $base . ' ' . $nameCounts[$base];
             }
             if ($i >= $offset) {
-                $areas[] = ['id' => (string) new Ulid(), 'name' => $name];
+                $areas[] = ['id' => $this->makeAreaUlid($i), 'name' => $name];
             }
         }
 
         return new JsonResponse([
             'data' => $areas,
+            'meta' => [
+                'total'      => $total,
+                'perPage'    => $perPage,
+                'totalPages' => $totalPages,
+                'page'       => $page,
+                'hasNext'    => $page < $totalPages,
+                'hasPrev'    => $page > 1,
+            ],
+        ]);
+    }
+
+    #[Route('/api/data/cases', name: 'api_data_cases')]
+    public function dataCases(Request $request): JsonResponse
+    {
+        usleep(300);
+        $total      = 30000;
+        $perPage    = 1000;
+        $totalPages = (int) ceil($total / $perPage);
+        $page       = max(1, min((int) $request->query->get('page', 1), $totalPages));
+        $offset     = ($page - 1) * $perPage;
+
+        $faker = Factory::create('en_EN');
+        $faker->seed(99);
+
+        $finalResults = [
+            'SL1',
+            'PV2+_nOPV2_not-tested, UNDER PROCESS',
+            'NSL2, UNDER PROCESS',
+            'SL1 DISCORDANT, UNDER PROCESS',
+            'VDPV1',
+            'aVDPV3',
+            'SL2 DISCORDANT, UNDER PROCESS',
+            'WPV1, SL3',
+            'PV2+_nOPV2+, UNDER PROCESs',
+            'WPV3, SL1',
+            'SL3',
+            'iVDPV2-n',
+            'NSL2',
+            'iVDPV3',
+            'NSL2, SL2, UNDER PROCESS',
+            'WPV1',
+            'WPV3, SL3',
+            'cVDPV1',
+            'WPV3',
+            'Negative',
+            'NPEV',
+            'cVDPV2',
+            'SL1, SL3, NPEV',
+            'WPV2',
+            'aVDPV2-n',
+            'NSL3, UNDER PROCESS',
+            'NSL1, SL1, UNDER PROCESS',
+            'SL2, UNDER PROCESS',
+            'WPV1, SL3, PV2+_nOPV2-, Under Process',
+            'PV2+_nOPV2-, UNDER PROCESS',
+            'NSL3, SL3, UNDER PROCESS',
+            'SL3 DISCORDANT, UNDER PROCESS',
+            'SL1, SL3 DISCORDANT, UNDER PROCESS',
+            'VDPV2',
+            'VDPV2-n',
+            'Not done',
+            'iVDPV2',
+            'NSL1, SL1, PV2+_nOPV2-, NPEV, UNDER PROCESS',
+            'cVDPV2-n',
+            'nOPV2-L',
+            'WPV1, SL1',
+            'SL2',
+            'VDPV3',
+            'iVDPV1',
+            'cVDPV3',
+            'aVDPV1',
+            'WPV2, SL2',
+            'aVDPV2',
+            'NSL1, NSL3, UNDER PROCESS',
+        ];
+
+        $cases = [];
+
+        for ($i = 0; $i < $offset + $perPage; $i++) {
+            $year      = 2024 + (int) floor($i / 10000);
+            $yearIndex = $i % 10000;
+
+            $patientName = $faker->name();
+            $areaIndex   = $faker->numberBetween(0, 29999);
+            $adeq        = $faker->randomElement(['ADEQ', 'INADEQ']);
+            $finalResult = $faker->randomElement($finalResults);
+            $createdAt   = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
+
+            if ($i >= $offset) {
+                $cases[] = [
+                    'id'          => $this->makeCaseUlid($i),
+                    'bid'         => sprintf('AFG/%d/%04d', $year, $yearIndex),
+                    'patientName' => $patientName,
+                    'year'        => $year,
+                    'adeq'        => $adeq,
+                    'finalResult' => $finalResult,
+                    'areaId'      => $this->makeAreaUlid($areaIndex),
+                    'createdAt'   => $createdAt,
+                ];
+            }
+        }
+
+        return new JsonResponse([
+            'data' => $cases,
             'meta' => [
                 'total'      => $total,
                 'perPage'    => $perPage,
@@ -78,12 +197,13 @@ class Kernel extends BaseKernel
             'version' => '1.0.12',
             'env'     => $this->getEnvironment(),
             'tables'  => [
-                'cases'     => ['id', 'name', 'areaId'],
+                'cases'     => ['id', 'bid', 'patientName', 'year', 'adeq', 'finalResult', 'areaId', 'createdAt'],
                 'areas'     => ['id', 'name'],
                 'specimens' => ['id', 'caseId'],
             ],
             'fetch'   => [
                 'areas' => '/api/data/areas',
+                'cases' => '/api/data/cases',
             ],
         ]);
     }

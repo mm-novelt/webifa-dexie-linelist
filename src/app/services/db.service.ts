@@ -20,6 +20,10 @@ export class DbService {
     await this.db.open();
   }
 
+  get isInitialized(): boolean {
+    return this.db !== null;
+  }
+
   get instance(): Dexie {
     if (!this.db) throw new Error('DB not initialized');
     return this.db;
