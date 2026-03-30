@@ -30,6 +30,14 @@ export class DbService {
     return this.db !== null;
   }
 
+  async deleteDatabase(): Promise<void> {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+    await Dexie.delete('webifa');
+  }
+
   get instance(): Dexie {
     if (!this.db) throw new Error('DB not initialized');
     return this.db;

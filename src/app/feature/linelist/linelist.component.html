@@ -3,18 +3,16 @@
 <div class="max-w-screen-xl mx-auto pt-20">
   <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
     <div class="p-4 flex items-center justify-between space-x-4">
-      <label for="input-group-1" class="sr-only">Search</label>
-      <div class="relative">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <svg class="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-               fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-width="2"
-                  d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
-          </svg>
-        </div>
-        <input type="text" id="input-group-1"
-               class="block w-full max-w-96 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-               placeholder="Search">
+      <div class="flex items-center gap-3">
+        @for (filter of filters; track filter.key) {
+          @switch (filter.type) {
+            @case ('text') {
+              <app-filter-text
+                [placeholder]="filter.placeholder ?? 'Search'"
+                (search)="onTextSearch(filter, $event)"/>
+            }
+          }
+        }
       </div>
       <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown"
               class="shrink-0 inline-flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary shadow-xs font-medium leading-5 rounded-base text-sm px-3 py-2 focus:outline-none"

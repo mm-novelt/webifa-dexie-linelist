@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { DataRepository, SortDirection } from '../../repositories/data.repository';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../header/header.component';
@@ -11,6 +11,7 @@ import { CellDateComponent } from './cells/cell-date/cell-date.component';
 import { CellManyToOneComponent } from './cells/cell-many-to-one/cell-many-to-one.component';
 import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-many.component';
 import { BadgeVariant, CellEnumComponent } from './cells/cell-enum/cell-enum.component';
+import { FilterTextComponent } from './filters/filter-text/filter-text.component';
 
 interface BaseColumn {
   key: string;
@@ -26,6 +27,15 @@ export interface OneToManyColumn extends BaseColumn { type: 'oneToMany'; table: 
 export interface EnumColumn extends BaseColumn { type: 'enum'; variants?: Record<string, BadgeVariant>; containsVariants?: Record<string, BadgeVariant>; }
 
 export type ColumnConfig = TitleColumn | StringColumn | DateColumn | RelationColumn | OneToManyColumn | EnumColumn;
+
+export interface TextFilterConfig {
+  type: 'text';
+  key: string;
+  fields: string[];
+  placeholder?: string;
+}
+
+export type FilterConfig = TextFilterConfig;
 
 @Component({
   selector: 'app-linelist',
@@ -43,9 +53,11 @@ export type ColumnConfig = TitleColumn | StringColumn | DateColumn | RelationCol
     CellManyToOneComponent,
     CellOneToManyComponent,
     CellEnumComponent,
+    FilterTextComponent,
   ],
 })
 export class LinelistComponent implements OnInit {
+
   table = input.required<string>();
 
   private dataRepository = inject(DataRepository);
@@ -60,6 +72,10 @@ export class LinelistComponent implements OnInit {
     { key: 'createdAt', label: 'Created At', sortable: true, type: 'date', format: 'dd/MM/yyyy' },
   ];
 
+  readonly filters: FilterConfig[] = [
+    { type: 'text', key: 'search', fields: ['bid', 'patientName', 'finalResult'], placeholder: 'Search...' },
+  ];
+
   readonly pageSize = 10;
 
   orderColumn = signal<string>('createdAt');
@@ -69,6 +85,20 @@ export class LinelistComponent implements OnInit {
   rows = signal<IdbObject[]>([]);
   total = signal<number>(0);
   totalPages = signal<number>(0);
+
+  /** Per-filter matched IDs: filterKey → string[] */
+  private filterResults = signal<Map<string, string[]>>(new Map());
+
+  /** Intersection of all active filters. Null = no active filter (show all). */
+  readonly filteredIds = computed<string[] | null>(() => {
+    const map = this.filterResults();
+    if (map.size === 0) return null;
+    const sets = [...map.values()];
+    return sets.reduce((acc, ids) => {
+      const lookup = new Set(ids);
+      return acc.filter(id => lookup.has(id));
+    });
+  });
 
   async ngOnInit(): Promise<void> {
     await this.loadData();
@@ -86,17 +116,32 @@ export class LinelistComponent implements OnInit {
     await this.loadData();
   }
 
+  async onTextSearch(filter: TextFilterConfig, term: string): Promise<void> {
+    const map = new Map(this.filterResults());
+    if (!term) {
+      map.delete(filter.key);
+    } else {
+      const ids = await this.dataRepository.searchByText(this.table(), filter.fields, term);
+      map.set(filter.key, ids);
+    }
+    this.filterResults.set(map);
+    this.currentPage.set(1);
+    await this.loadData();
+  }
+
   cellValue(row: IdbObject, key: string): unknown {
     return (row as Record<string, unknown>)[key];
   }
 
   private async loadData(): Promise<void> {
+    const filteredIds = this.filteredIds();
     const result = await this.dataRepository.getPaginated(
       this.table(),
       this.currentPage(),
       this.pageSize,
       this.orderColumn(),
       this.orderDirection(),
+      filteredIds ?? undefined,
     );
     this.rows.set(result.data);
     this.total.set(result.total);
