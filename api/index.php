@@ -33,9 +33,9 @@ class Kernel extends BaseKernel
             'version' => '1.0.12',
             'env'     => $this->getEnvironment(),
             'tables'  => [
-                'cases'     => ['id', 'name'],
-                'areas'     => ['id', 'name', 'areaId'],
-                'specimens' => ['id', 'caseId', 'caseId'],
+                'cases'     => ['id', 'name', 'areaId'],
+                'areas'     => ['id', 'name'],
+                'specimens' => ['id', 'caseId'],
             ],
         ]);
     }
