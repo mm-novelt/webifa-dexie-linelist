@@ -163,7 +163,7 @@ class Kernel extends BaseKernel
 
       $patientName = $faker->name();
       $areaIndex = $faker->numberBetween(0, 29999);
-      $adeq = $faker->randomElement(['ADEQ', 'INADEQ']);
+      $adeq = $faker->randomElement(['ADEQ', 'INADEQ', 'UNKNOWN', 'PENDING']);
       $finalResult = $faker->randomElement($finalResults);
       $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
 
