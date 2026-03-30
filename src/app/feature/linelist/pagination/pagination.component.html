@@ -1,0 +1,37 @@
+<nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4" aria-label="Table navigation">
+  <span class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">
+    Showing <span class="font-semibold text-heading">{{ rangeStart() }}-{{ rangeEnd() }}</span>
+    of <span class="font-semibold text-heading">{{ total() }}</span>
+  </span>
+  <ul class="flex -space-x-px text-sm">
+    <li>
+      <button (click)="prev()" [disabled]="currentPage() === 1"
+              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed">
+        Previous
+      </button>
+    </li>
+    @for (page of visiblePages(); track $index) {
+      <li>
+        @if (page === '...') {
+          <span class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium font-medium text-sm w-9 h-9">
+            ...
+          </span>
+        } @else {
+          <button (click)="goTo(page)"
+                  [class]="page === currentPage()
+                    ? 'flex items-center justify-center text-fg-brand bg-brand-softer box-border border border-default-medium hover:bg-brand-soft hover:text-fg-brand font-medium text-sm w-9 h-9 focus:outline-none'
+                    : 'flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-9 h-9 focus:outline-none'"
+                  [attr.aria-current]="page === currentPage() ? 'page' : null">
+            {{ page }}
+          </button>
+        }
+      </li>
+    }
+    <li>
+      <button (click)="next()" [disabled]="currentPage() === totalPages()"
+              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed">
+        Next
+      </button>
+    </li>
+  </ul>
+</nav>

@@ -1,6 +1,5 @@
 <app-header/>
 
-
 <div class="max-w-screen-xl mx-auto mt-20">
   <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
     <div class="p-4 flex items-center justify-between space-x-4">
@@ -46,83 +45,41 @@
     <table class="w-full text-sm text-left rtl:text-right text-body">
       <thead class="text-sm text-body bg-neutral-secondary-medium border-b border-t border-default-medium">
       <tr>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Case BID
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Patient name
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Area
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Adeq
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Final result
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Specimens
-        </th>
-        <th scope="col" class="px-3 py-3 font-medium">
-          Created At
-        </th>
+        @for (col of columns; track col.key) {
+          <th app-table-column-header
+              [label]="col.label"
+              [columnKey]="col.key"
+              [sortable]="col.sortable ?? false"
+              [isActive]="orderColumn() === col.key"
+              [direction]="orderDirection()"
+              (sortChange)="onSortChange($event)">
+          </th>
+        }
       </tr>
       </thead>
       <tbody>
         @for (row of rows(); track $index) {
           <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-
-            <th scope="row" class="p-4 font-medium text-heading whitespace-nowrap">
-              {{ row['bid'] }}
-            </th>
-            <td class="p-4">
-              {{ row['patientName'] }}
-            </td>
-            <td class="p-4">
-              {{ row['areaId'] }}
-            </td>
-            <td class="p-4">
-              {{ row['adeq'] }}
-            </td>
-            <td class="p-4">
-              {{ row['finalResult'] }}
-            </td>
-            <td class="p-4">
-              Specimens todo
-            </td>
-            <td class="p-4">
-              {{ row['createdAt'] | date: 'dd/MM/yyyy' }}
-            </td>
+            @for (col of columns; track col.key) {
+              @if (col.isRowHeader) {
+                <th scope="row" class="p-4 font-medium text-heading whitespace-nowrap">
+                  {{ cellValue(row, col.key) }}
+                </th>
+              } @else if (col.isDate) {
+                <td class="p-4">{{ $any(cellValue(row, col.key)) | date: 'dd/MM/yyyy' }}</td>
+              } @else {
+                <td class="p-4">{{ cellValue(row, col.key) }}</td>
+              }
+            }
           </tr>
         }
       </tbody>
     </table>
-    <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4" aria-label="Table navigation">
-      <span class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">Showing <span class="font-semibold text-heading">1-10</span> of <span class="font-semibold text-heading">1000</span></span>
-      <ul class="flex -space-x-px text-sm">
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm px-3 h-9 focus:outline-none">Previous</a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-9 h-9 focus:outline-none">1</a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-9 h-9 focus:outline-none">2</a>
-        </li>
-        <li>
-          <a href="#" aria-current="page" class="flex items-center justify-center text-fg-brand bg-brand-softer box-border border border-default-medium hover:bg-brand-soft hover:text-fg-brand font-medium text-sm w-9 h-9 focus:outline-none">3</a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-9 h-9 focus:outline-none">...</a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-9 h-9 focus:outline-none">5</a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm px-3 h-9 focus:outline-none">Next</a>
-        </li>
-      </ul>
-    </nav>
+    <app-pagination
+      [currentPage]="currentPage()"
+      [totalPages]="totalPages()"
+      [total]="total()"
+      [pageSize]="pageSize"
+      (pageChange)="onPageChange($event)"/>
   </div>
 </div>
