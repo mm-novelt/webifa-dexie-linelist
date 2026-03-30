@@ -12,6 +12,7 @@ import { CellManyToOneComponent } from './cells/cell-many-to-one/cell-many-to-on
 import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-many.component';
 import { BadgeVariant, CellEnumComponent } from './cells/cell-enum/cell-enum.component';
 import { FilterTextComponent } from './filters/filter-text/filter-text.component';
+import { FilterSelectComponent, SelectOption } from './filters/filter-select/filter-select.component';
 
 interface BaseColumn {
   key: string;
@@ -35,7 +36,15 @@ export interface TextFilterConfig {
   placeholder?: string;
 }
 
-export type FilterConfig = TextFilterConfig;
+export interface SelectFilterConfig {
+  type: 'select';
+  key: string;
+  field: string;
+  placeholder?: string;
+  options: SelectOption[];
+}
+
+export type FilterConfig = TextFilterConfig | SelectFilterConfig;
 
 @Component({
   selector: 'app-linelist',
@@ -54,6 +63,7 @@ export type FilterConfig = TextFilterConfig;
     CellOneToManyComponent,
     CellEnumComponent,
     FilterTextComponent,
+    FilterSelectComponent,
   ],
 })
 export class LinelistComponent implements OnInit {
@@ -74,6 +84,7 @@ export class LinelistComponent implements OnInit {
 
   readonly filters: FilterConfig[] = [
     { type: 'text', key: 'search', fields: ['bid', 'patientName', 'finalResult'], placeholder: 'Search...' },
+    { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'Adeq — All', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
   ];
 
   readonly pageSize = 10;
@@ -122,6 +133,19 @@ export class LinelistComponent implements OnInit {
       map.delete(filter.key);
     } else {
       const ids = await this.dataRepository.searchByText(this.table(), filter.fields, term);
+      map.set(filter.key, ids);
+    }
+    this.filterResults.set(map);
+    this.currentPage.set(1);
+    await this.loadData();
+  }
+
+  async onSelectFilter(filter: SelectFilterConfig, value: string): Promise<void> {
+    const map = new Map(this.filterResults());
+    if (!value) {
+      map.delete(filter.key);
+    } else {
+      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.field, value);
       map.set(filter.key, ids);
     }
     this.filterResults.set(map);

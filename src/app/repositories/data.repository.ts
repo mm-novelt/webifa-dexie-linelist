@@ -99,6 +99,12 @@ export class DataRepository {
     return [...union];
   }
 
+  async searchByExactValue(tableName: string, field: string, value: string): Promise<string[]> {
+    const table = this.db.instance.table(tableName);
+    const keys = await table.where(field).equals(value).primaryKeys();
+    return keys as string[];
+  }
+
   private getIndexedFields(table: Table, fields: string[]): string[] {
     const indexed = new Set([
       table.schema.primKey.name,

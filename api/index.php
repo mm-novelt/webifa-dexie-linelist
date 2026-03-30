@@ -42,10 +42,29 @@ class Kernel extends BaseKernel
     return sprintf('01CASE%020d', $index);
   }
 
+  private function makeExtraFields(\Faker\Generator $faker): array
+  {
+    $cacheKey = 'extra_fields_500';
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success) {
+      return $cached;
+    }
+    $fields = [];
+    for ($f = 1; $f <= 500; $f++) {
+      $pick = $faker->numberBetween(0, 2);
+      $fields["field_{$f}"] = match ($pick) {
+        0 => null,
+        1 => $faker->lexify(str_repeat('?', $faker->numberBetween(3, 20))),
+        2 => $faker->numberBetween(0, 99999),
+      };
+    }
+    apcu_store($cacheKey, $fields);
+    return $fields;
+  }
+
   #[Route('/api/data/areas', name: 'api_data_areas')]
   public function dataAreas(Request $request): JsonResponse
   {
-    usleep(rand(100, 600));
     $total = 30000;
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
@@ -93,7 +112,6 @@ class Kernel extends BaseKernel
   #[Route('/api/data/cases', name: 'api_data_cases')]
   public function dataCases(Request $request): JsonResponse
   {
-    usleep(300);
     $total = 30000;
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
@@ -168,7 +186,7 @@ class Kernel extends BaseKernel
       $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
 
       if ($i >= $offset) {
-        $cases[] = [
+        $cases[] = array_merge([
           'id' => $this->makeCaseUlid($i),
           'bid' => sprintf('AFG/%d/%04d', $year, $yearIndex),
           'patientName' => $patientName,
@@ -177,7 +195,7 @@ class Kernel extends BaseKernel
           'finalResult' => $finalResult,
           'areaId' => $this->makeAreaUlid($areaIndex),
           'createdAt' => $createdAt,
-        ];
+        ], $this->makeExtraFields($faker));
       }
     }
 
@@ -197,7 +215,6 @@ class Kernel extends BaseKernel
   #[Route('/api/data/specimens', name: 'api_data_specimens')]
   public function dataSpecimens(Request $request): JsonResponse
   {
-    usleep(rand(100, 600));
     $total = 60000;
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
@@ -291,13 +308,13 @@ class Kernel extends BaseKernel
       for ($s = 1; $s <= 2 && $collected < $perPage; $s++) {
         $specIndex = $i * 2 + ($s - 1);
         if ($specIndex >= $offset) {
-          $specimens[] = [
+          $specimens[] = array_merge([
             'id' => $this->makeSpecimenUlid($specIndex),
             'bid' => sprintf('%s#%02d', $caseBid, $s),
             'caseId' => $caseUlid,
             'finalResult' => $finalResult,
             'createdAt' => $createdAt,
-          ];
+          ], $this->makeExtraFields($faker));
           $collected++;
         }
       }

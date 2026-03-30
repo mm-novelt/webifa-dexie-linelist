@@ -9,7 +9,13 @@
             @case ('text') {
               <app-filter-text
                 [placeholder]="filter.placeholder ?? 'Search'"
-                (search)="onTextSearch(filter, $event)"/>
+                (search)="onTextSearch($any(filter), $event)"/>
+            }
+            @case ('select') {
+              <app-filter-select
+                [placeholder]="filter.placeholder ?? 'All'"
+                [options]="$any(filter).options"
+                (select)="onSelectFilter($any(filter), $event)"/>
             }
           }
         }
