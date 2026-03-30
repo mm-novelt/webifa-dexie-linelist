@@ -16,7 +16,7 @@ if (!\class_exists(KernelDevDebugContainer::class, false)) {
 
 return new \ContainerF2mIPD8\KernelDevDebugContainer([
     'container.build_hash' => 'F2mIPD8',
-    'container.build_id' => 'df826974',
-    'container.build_time' => 1774874815,
+    'container.build_id' => '94e2e2f2',
+    'container.build_time' => 1774878617,
     'container.runtime_mode' => \in_array(\PHP_SAPI, ['cli', 'phpdbg', 'embed'], true) ? 'web=0' : 'web=1',
 ], __DIR__.\DIRECTORY_SEPARATOR.'ContainerF2mIPD8');

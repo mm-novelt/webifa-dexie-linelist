@@ -1,6 +1,6 @@
 <app-header/>
 
-<div class="max-w-screen-xl mx-auto mt-20">
+<div class="max-w-screen-xl mx-auto pt-20">
   <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
     <div class="p-4 flex items-center justify-between space-x-4">
       <label for="input-group-1" class="sr-only">Search</label>
@@ -61,14 +61,25 @@
         @for (row of rows(); track $index) {
           <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
             @for (col of columns; track col.key) {
-              @if (col.isRowHeader) {
-                <th scope="row" class="p-4 font-medium text-heading whitespace-nowrap">
-                  {{ cellValue(row, col.key) }}
-                </th>
-              } @else if (col.isDate) {
-                <td class="p-4">{{ $any(cellValue(row, col.key)) | date: 'dd/MM/yyyy' }}</td>
-              } @else {
-                <td class="p-4">{{ cellValue(row, col.key) }}</td>
+              @switch (col.type) {
+                @case ('title') {
+                  <th app-cell-title [value]="cellValue(row, col.key)"></th>
+                }
+                @case ('string') {
+                  <td app-cell-string [value]="cellValue(row, col.key)"></td>
+                }
+                @case ('date') {
+                  <td app-cell-date [value]="cellValue(row, col.key)" [format]="$any(col).format"></td>
+                }
+                @case ('relation') {
+                  <td app-cell-many-to-one [value]="cellValue(row, col.key)" [table]="$any(col).table" [displayProperty]="$any(col).displayProperty"></td>
+                }
+                @case ('oneToMany') {
+                  <td app-cell-one-to-many [rowId]="row.id" [table]="$any(col).table" [foreignKey]="$any(col).foreignKey" [displayProperty]="$any(col).displayProperty"></td>
+                }
+                @case ('enum') {
+                  <td app-cell-enum [value]="cellValue(row, col.key)" [variants]="$any(col).variants ?? {}" [containsVariants]="$any(col).containsVariants ?? {}"></td>
+                }
               }
             }
           </tr>

@@ -59,6 +59,7 @@ class Kernel extends BaseKernel
     $areas = [];
 
     for ($i = 0; $i < $offset + $perPage; $i++) {
+      $year = 2024 + (int)floor($i / 30000);
       $base = $faker->city();
       if (!isset($nameCounts[$base])) {
         $nameCounts[$base] = 0;
@@ -68,7 +69,11 @@ class Kernel extends BaseKernel
         $name = $base . ' ' . $nameCounts[$base];
       }
       if ($i >= $offset) {
-        $areas[] = ['id' => $this->makeAreaUlid($i), 'name' => $name];
+        $areas[] = [
+          'id' => $this->makeAreaUlid($i),
+          'name' => $name,
+          'createdAt' => $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s')
+        ];
       }
     }
 
@@ -316,11 +321,10 @@ class Kernel extends BaseKernel
   {
     return new JsonResponse([
       'app' => 'webifa',
-      'version' => '1.0.12',
-      'env' => $this->getEnvironment(),
+      'version' => '1',
       'tables' => [
         'cases' => ['id', 'bid', 'patientName', 'year', 'adeq', 'finalResult', 'areaId', 'createdAt'],
-        'areas' => ['id', 'name'],
+        'areas' => ['id', 'name', 'createdAt'],
         'specimens' => ['id', 'bid', 'caseId', 'finalResult', 'createdAt'],
       ],
       'fetch' => [

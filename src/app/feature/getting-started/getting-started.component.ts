@@ -97,6 +97,6 @@ export class GettingStartedComponent {
   }
 
   startApplication() {
-    this.router.navigate(['/linelist', 'case']);
+    this.router.navigate(['/linelist', 'cases']);
   }
 }
