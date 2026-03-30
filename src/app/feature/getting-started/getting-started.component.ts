@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { DbService } from '../../services/db.service';
 import { ConfigService } from '../../services/config.service';
 import { DataFetchRepository, TableFetchProgress } from '../../repositories/data-fetch.repository';
+import { IndexingProgress, SearchEngineService } from '../../services/search-engine.service';
 
 @Component({
   selector: 'app-getting-started',
@@ -54,8 +55,10 @@ import { DataFetchRepository, TableFetchProgress } from '../../repositories/data
             <p class="text-sm font-medium text-gray-700 text-center">Initialisation...</p>
           } @else if (query.isError()) {
             <p class="text-sm font-medium text-red-500 text-center">Erreur lors du chargement de la configuration.</p>
-          } @else if (isFetching() || isDone()) {
-            <p class="text-sm font-medium text-gray-700 mb-4 text-center">{{ isDone() ? 'Chargement terminé.' : 'Chargement des données...' }}</p>
+          } @else if (isFetching() || isIndexing() || isDone()) {
+            <p class="text-sm font-medium text-gray-700 mb-4 text-center">
+              {{ isIndexing() ? 'Indexation en cours...' : isDone() ? 'Chargement terminé.' : 'Chargement des données...' }}
+            </p>
             @for (progress of tableProgressList(); track progress.tableName) {
               <div class="mb-3">
                 <div class="flex justify-between text-xs mb-1">
@@ -67,6 +70,20 @@ import { DataFetchRepository, TableFetchProgress } from '../../repositories/data
                     [class]="progress.done ? 'bg-emerald-500' : 'bg-blue-600'"
                     class="h-1.5 rounded-full transition-all duration-300"
                     [style.width.%]="progress.percent"
+                  ></div>
+                </div>
+              </div>
+            }
+            @if (isIndexing()) {
+              <div class="mt-3">
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-gray-700">Moteur de recherche</span>
+                  <span class="text-gray-400">{{ indexingProgress().current }}/{{ indexingProgress().total }} ({{ indexingProgress().percent }}%)</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                  <div
+                    class="bg-violet-500 h-1.5 rounded-full transition-all duration-150"
+                    [style.width.%]="indexingProgress().percent"
                   ></div>
                 </div>
               </div>
@@ -88,6 +105,7 @@ export class GettingStartedComponent {
   private db = inject(DbService);
   private configService = inject(ConfigService);
   private dataFetchRepository = inject(DataFetchRepository);
+  private searchEngine = inject(SearchEngineService);
   private router = inject(Router);
 
   query = this.configService.query;
@@ -97,6 +115,8 @@ export class GettingStartedComponent {
   password = 'password123';
 
   isFetching = signal(false);
+  isIndexing = signal(false);
+  indexingProgress = signal<IndexingProgress>({ current: 0, total: 0, percent: 0 });
   isDone = signal(false);
 
   private tableProgressSignals = signal<WritableSignal<TableFetchProgress>[]>([]);
@@ -138,6 +158,18 @@ export class GettingStartedComponent {
       );
 
       this.isFetching.set(false);
+
+      if (Object.keys(config.searchEngine).length > 0) {
+        const alreadyIndexed = await this.searchEngine.isIndexed();
+        if (!alreadyIndexed) {
+          this.isIndexing.set(true);
+          await this.searchEngine.buildIndex(config.searchEngine, progress => {
+            this.indexingProgress.set(progress);
+          });
+          this.isIndexing.set(false);
+        }
+      }
+
       this.isDone.set(true);
     });
   }

@@ -9,7 +9,7 @@ import { DataRepository } from '../../../../repositories/data.repository';
       <span class="text-body opacity-40">…</span>
     } @else if (displayValues().length > 0) {
 
-        @for (val of displayValues(); track val) {
+        @for (val of displayValues(); track $index) {
           <span class="bg-brand-softer text-fg-brand-strong text-xs font-medium px-1.5 py-0.5 rounded">{{ val }}</span>
         }
 

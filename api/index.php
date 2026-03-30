@@ -50,7 +50,7 @@ class Kernel extends BaseKernel
       return $cached;
     }
     $fields = [];
-    for ($f = 1; $f <= 500; $f++) {
+    for ($f = 1; $f <= 10; $f++) {
       $pick = $faker->numberBetween(0, 2);
       $fields["field_{$f}"] = match ($pick) {
         0 => null,
@@ -348,6 +348,16 @@ class Kernel extends BaseKernel
         'areas' => '/api/data/areas',
         'cases' => '/api/data/cases',
         'specimens' => '/api/data/specimens',
+      ],
+      'searchEngine' => [
+        'cases' => [
+          'cases.area.name',
+          'cases.bid',
+          'cases.year',
+          'cases.finalResult',
+          'cases.patientName',
+          'cases.adeq',
+        ],
       ],
     ]);
   }

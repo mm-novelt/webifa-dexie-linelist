@@ -12,6 +12,7 @@ export class DbService {
     for (const [table, indexes] of Object.entries(tables)) {
       schema[table] = [...new Set(indexes)].join(', ');
     }
+    schema['searchEngine'] = '++id, objectId, tableName, property, value, [tableName+value], [property+value]';
 
     console.log('Schema', schema);
 
