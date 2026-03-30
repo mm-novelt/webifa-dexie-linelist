@@ -1,0 +1,12 @@
+{
+    "require": {
+        "php": "^8.5",
+        "symfony/framework-bundle": "^8.0",
+        "symfony/runtime": "^8.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}

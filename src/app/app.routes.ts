@@ -1,9 +1,15 @@
 import { Routes } from '@angular/router';
-import {LinelistComponent} from "./feature/linelist/linelist.component";
-import { Linelist2Component } from "./feature/linelist2/linelist2.component";
+import { dbExistsGuard } from './guards/db-exists.guard';
+import { GettingStartedComponent } from './feature/getting-started/getting-started.component';
 
 export const routes: Routes = [
-  { path: '',   redirectTo: '/linelist', pathMatch: 'full' },
-  { path: 'linelist', component: LinelistComponent },
-  { path: 'linelist2', component: Linelist2Component },
+  {
+    path: 'getting-started',
+    component: GettingStartedComponent,
+  },
+  {
+    path: '**',
+    canActivate: [dbExistsGuard],
+    children: [],
+  },
 ];

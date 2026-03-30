@@ -11,7 +11,6 @@ import { HeaderComponent } from "./shared/header/header.component";
   standalone: true,
   imports: [RouterOutlet, FormsModule, JsonPipe, KeyValuePipe, HeaderComponent],
   template: `
-    <app-header></app-header>
     <router-outlet></router-outlet>
     `,
 })
