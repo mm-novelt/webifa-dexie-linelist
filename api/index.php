@@ -36,7 +36,7 @@ class Kernel extends BaseKernel
         $page      = max(1, min((int) $request->query->get('page', 1), $totalPages));
         $offset    = ($page - 1) * $perPage;
 
-        $faker = Factory::create('fr_FR');
+        $faker = Factory::create('en_EN');
         $faker->seed(42);
 
         $nameCounts = [];
@@ -80,6 +80,9 @@ class Kernel extends BaseKernel
                 'cases'     => ['id', 'name', 'areaId'],
                 'areas'     => ['id', 'name'],
                 'specimens' => ['id', 'caseId'],
+            ],
+            'fetch'   => [
+                'areas' => '/api/data/areas',
             ],
         ]);
     }

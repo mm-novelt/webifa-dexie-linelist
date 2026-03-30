@@ -6,6 +6,7 @@
 /out-tsc
 /bazel-out
 /api/vendor
+/api/var/**/*
 
 # Node
 /node_modules

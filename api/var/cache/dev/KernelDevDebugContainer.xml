@@ -97,6 +97,7 @@
       <argument type="service" id="argument_metadata_factory"/>
       <argument type="iterator">
         <argument type="service" id="argument_resolver.backed_enum_resolver"/>
+        <argument type="service" id="argument_resolver.uid"/>
         <argument type="service" id="argument_resolver.datetime"/>
         <argument type="service" id="argument_resolver.request_attribute"/>
         <argument type="service" id="argument_resolver.request"/>
@@ -105,10 +106,13 @@
         <argument type="service" id="argument_resolver.default"/>
         <argument type="service" id="argument_resolver.variadic"/>
       </argument>
-      <argument type="service" id=".service_locator.IrVHEKj"/>
+      <argument type="service" id=".service_locator.5xM5VTz"/>
     </service>
     <service id="argument_resolver.backed_enum_resolver" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\BackedEnumValueResolver">
       <tag name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\BackedEnumValueResolver" priority="100">controller.argument_value_resolver</tag>
+    </service>
+    <service id="argument_resolver.uid" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\UidValueResolver">
+      <tag name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\UidValueResolver" priority="100">controller.argument_value_resolver</tag>
     </service>
     <service id="argument_resolver.datetime" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DateTimeValueResolver">
       <tag name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DateTimeValueResolver" priority="100">controller.argument_value_resolver</tag>
@@ -896,6 +900,25 @@
     <service id="secrets.local_vault" class="Symfony\Bundle\FrameworkBundle\Secrets\DotenvVault">
       <argument>/home/mathias/Dev/webifa-dexie/api/.env.dev.local</argument>
     </service>
+    <service id="ulid.factory" class="Symfony\Component\Uid\Factory\UlidFactory"/>
+    <service id="uuid.factory" class="Symfony\Component\Uid\Factory\UuidFactory">
+      <argument>7</argument>
+      <argument>7</argument>
+      <argument>5</argument>
+      <argument>Symfony\Component\Uid\UuidV4</argument>
+      <argument>null</argument>
+      <argument>null</argument>
+    </service>
+    <service id="name_based_uuid.factory" class="Symfony\Component\Uid\Factory\NameBasedUuidFactory">
+      <argument type="abstract">Please set the "framework.uid.name_based_uuid_namespace" configuration option to use the "name_based_uuid.factory" service</argument>
+      <factory service="uuid.factory" method="nameBased"/>
+    </service>
+    <service id="random_based_uuid.factory" class="Symfony\Component\Uid\Factory\RandomBasedUuidFactory">
+      <factory service="uuid.factory" method="randomBased"/>
+    </service>
+    <service id="time_based_uuid.factory" class="Symfony\Component\Uid\Factory\TimeBasedUuidFactory">
+      <factory service="uuid.factory" method="timeBased"/>
+    </service>
     <service id=".cache_connection.MfCypIA" class="Symfony\Component\Cache\Adapter\AbstractAdapter" constructor="createConnection">
       <argument>redis://localhost</argument>
       <argument type="collection">
@@ -1023,12 +1046,13 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.mFBT25N" method="withContext"/>
     </service>
-    <service id=".service_locator.IrVHEKj" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.5xM5VTz" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\RequestPayloadValueResolver" type="service_closure" id="argument_resolver.request_payload"/>
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\QueryParameterValueResolver" type="service_closure" id="argument_resolver.query_parameter_value_resolver"/>
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\BackedEnumValueResolver" type="service_closure" id="argument_resolver.backed_enum_resolver"/>
+        <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\UidValueResolver" type="service_closure" id="argument_resolver.uid"/>
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DateTimeValueResolver" type="service_closure" id="argument_resolver.datetime"/>
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\RequestAttributeValueResolver" type="service_closure" id="argument_resolver.request_attribute"/>
         <argument key="Symfony\Component\HttpKernel\Controller\ArgumentResolver\RequestValueResolver" type="service_closure" id="argument_resolver.request"/>
@@ -1096,6 +1120,11 @@
     <service id="Symfony\Component\Routing\Matcher\UrlMatcherInterface" alias="router.default"/>
     <service id="Symfony\Component\Routing\RequestContextAwareInterface" alias="router.default"/>
     <service id="Symfony\Component\Routing\RequestContext" alias="router.request_context"/>
+    <service id="Symfony\Component\Uid\Factory\UlidFactory" alias="ulid.factory"/>
+    <service id="Symfony\Component\Uid\Factory\UuidFactory" alias="uuid.factory"/>
+    <service id="Symfony\Component\Uid\Factory\NameBasedUuidFactory" alias="name_based_uuid.factory"/>
+    <service id="Symfony\Component\Uid\Factory\RandomBasedUuidFactory" alias="random_based_uuid.factory"/>
+    <service id="Symfony\Component\Uid\Factory\TimeBasedUuidFactory" alias="time_based_uuid.factory"/>
     <service id="cache.default_redis_provider" alias=".cache_connection.MfCypIA"/>
     <service id="cache.default_valkey_provider" alias=".cache_connection.H8vabc8"/>
     <service id="cache.default_memcached_provider" alias=".cache_connection.8kvDmRs"/>
