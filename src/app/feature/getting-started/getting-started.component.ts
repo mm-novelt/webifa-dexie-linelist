@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal, WritableSignal } from '@angular/core';
+import { Router } from '@angular/router';
 import { DbService } from '../../services/db.service';
 import { ConfigService } from '../../services/config.service';
 import { DataFetchRepository, TableFetchProgress } from '../../repositories/data-fetch.repository';
@@ -33,7 +34,9 @@ import { DataFetchRepository, TableFetchProgress } from '../../repositories/data
             </div>
           }
           @if (isDone()) {
-            <button class="mt-4 w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-base hover:bg-blue-700 transition-colors">
+            <button
+              (click)="startApplication()"
+              class="mt-4 w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-base hover:bg-blue-700 transition-colors">
               Start application
             </button>
           }
@@ -45,6 +48,7 @@ export class GettingStartedComponent {
   private db = inject(DbService);
   private configService = inject(ConfigService);
   private dataFetchRepository = inject(DataFetchRepository);
+  private router = inject(Router);
 
   query = this.configService.query;
 
@@ -90,5 +94,9 @@ export class GettingStartedComponent {
       this.isFetching.set(false);
       this.isDone.set(true);
     });
+  }
+
+  startApplication() {
+    this.router.navigate(['/linelist', 'case']);
   }
 }

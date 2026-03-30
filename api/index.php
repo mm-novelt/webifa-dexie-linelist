@@ -13,202 +13,325 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 class Kernel extends BaseKernel
 {
-    use MicroKernelTrait;
+  use MicroKernelTrait;
 
-    protected function configureContainer(ContainerConfigurator $container): void
-    {
-        $container->extension('framework', [
-            'secret' => 'my_secret',
-        ]);
+  protected function configureContainer(ContainerConfigurator $container): void
+  {
+    $container->extension('framework', [
+      'secret' => 'my_secret',
+    ]);
+  }
+
+  protected function configureRoutes(RoutingConfigurator $routes): void
+  {
+    $routes->import(static::class, 'attribute');
+  }
+
+  private function makeSpecimenUlid(int $index): string
+  {
+    return sprintf('01SPEC%020d', $index);
+  }
+
+  private function makeAreaUlid(int $index): string
+  {
+    return sprintf('01AREA%020d', $index);
+  }
+
+  private function makeCaseUlid(int $index): string
+  {
+    return sprintf('01CASE%020d', $index);
+  }
+
+  #[Route('/api/data/areas', name: 'api_data_areas')]
+  public function dataAreas(Request $request): JsonResponse
+  {
+    usleep(rand(100, 600));
+    $total = 30000;
+    $perPage = 1000;
+    $totalPages = (int)ceil($total / $perPage);
+    $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+    $offset = ($page - 1) * $perPage;
+
+    $faker = Factory::create('en_EN');
+    $faker->seed(42);
+
+    $nameCounts = [];
+    $areas = [];
+
+    for ($i = 0; $i < $offset + $perPage; $i++) {
+      $base = $faker->city();
+      if (!isset($nameCounts[$base])) {
+        $nameCounts[$base] = 0;
+        $name = $base;
+      } else {
+        $nameCounts[$base]++;
+        $name = $base . ' ' . $nameCounts[$base];
+      }
+      if ($i >= $offset) {
+        $areas[] = ['id' => $this->makeAreaUlid($i), 'name' => $name];
+      }
     }
 
-    protected function configureRoutes(RoutingConfigurator $routes): void
-    {
-        $routes->import(static::class, 'attribute');
-    }
+    return new JsonResponse([
+      'data' => $areas,
+      'meta' => [
+        'total' => $total,
+        'perPage' => $perPage,
+        'totalPages' => $totalPages,
+        'page' => $page,
+        'hasNext' => $page < $totalPages,
+        'hasPrev' => $page > 1,
+      ],
+    ]);
+  }
 
-    private function makeSpecimenUlid(int $index): string
-    {
-        return sprintf('01SPEC%020d', $index);
-    }
+  #[Route('/api/data/cases', name: 'api_data_cases')]
+  public function dataCases(Request $request): JsonResponse
+  {
+    usleep(300);
+    $total = 30000;
+    $perPage = 1000;
+    $totalPages = (int)ceil($total / $perPage);
+    $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+    $offset = ($page - 1) * $perPage;
 
-    private function makeAreaUlid(int $index): string
-    {
-        return sprintf('01AREA%020d', $index);
-    }
+    $faker = Factory::create('en_EN');
+    $faker->seed(99);
 
-    private function makeCaseUlid(int $index): string
-    {
-        return sprintf('01CASE%020d', $index);
-    }
+    $finalResults = [
+      'SL1',
+      'PV2+_nOPV2_not-tested, UNDER PROCESS',
+      'NSL2, UNDER PROCESS',
+      'SL1 DISCORDANT, UNDER PROCESS',
+      'VDPV1',
+      'aVDPV3',
+      'SL2 DISCORDANT, UNDER PROCESS',
+      'WPV1, SL3',
+      'PV2+_nOPV2+, UNDER PROCESs',
+      'WPV3, SL1',
+      'SL3',
+      'iVDPV2-n',
+      'NSL2',
+      'iVDPV3',
+      'NSL2, SL2, UNDER PROCESS',
+      'WPV1',
+      'WPV3, SL3',
+      'cVDPV1',
+      'WPV3',
+      'Negative',
+      'NPEV',
+      'cVDPV2',
+      'SL1, SL3, NPEV',
+      'WPV2',
+      'aVDPV2-n',
+      'NSL3, UNDER PROCESS',
+      'NSL1, SL1, UNDER PROCESS',
+      'SL2, UNDER PROCESS',
+      'WPV1, SL3, PV2+_nOPV2-, Under Process',
+      'PV2+_nOPV2-, UNDER PROCESS',
+      'NSL3, SL3, UNDER PROCESS',
+      'SL3 DISCORDANT, UNDER PROCESS',
+      'SL1, SL3 DISCORDANT, UNDER PROCESS',
+      'VDPV2',
+      'VDPV2-n',
+      'Not done',
+      'iVDPV2',
+      'NSL1, SL1, PV2+_nOPV2-, NPEV, UNDER PROCESS',
+      'cVDPV2-n',
+      'nOPV2-L',
+      'WPV1, SL1',
+      'SL2',
+      'VDPV3',
+      'iVDPV1',
+      'cVDPV3',
+      'aVDPV1',
+      'WPV2, SL2',
+      'aVDPV2',
+      'NSL1, NSL3, UNDER PROCESS',
+    ];
 
-    #[Route('/api/data/areas', name: 'api_data_areas')]
-    public function dataAreas(Request $request): JsonResponse
-    {
-        usleep(300);
-        $total      = 30000;
-        $perPage    = 1000;
-        $totalPages = (int) ceil($total / $perPage);
-        $page       = max(1, min((int) $request->query->get('page', 1), $totalPages));
-        $offset     = ($page - 1) * $perPage;
+    $cases = [];
 
-        $faker = Factory::create('en_EN');
-        $faker->seed(42);
+    for ($i = 0; $i < $offset + $perPage; $i++) {
+      $year = 2024 + (int)floor($i / 10000);
+      $yearIndex = $i % 10000;
 
-        $nameCounts = [];
-        $areas = [];
+      $patientName = $faker->name();
+      $areaIndex = $faker->numberBetween(0, 29999);
+      $adeq = $faker->randomElement(['ADEQ', 'INADEQ']);
+      $finalResult = $faker->randomElement($finalResults);
+      $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
 
-        for ($i = 0; $i < $offset + $perPage; $i++) {
-            $base = $faker->city();
-            if (!isset($nameCounts[$base])) {
-                $nameCounts[$base] = 0;
-                $name = $base;
-            } else {
-                $nameCounts[$base]++;
-                $name = $base . ' ' . $nameCounts[$base];
-            }
-            if ($i >= $offset) {
-                $areas[] = ['id' => $this->makeAreaUlid($i), 'name' => $name];
-            }
-        }
-
-        return new JsonResponse([
-            'data' => $areas,
-            'meta' => [
-                'total'      => $total,
-                'perPage'    => $perPage,
-                'totalPages' => $totalPages,
-                'page'       => $page,
-                'hasNext'    => $page < $totalPages,
-                'hasPrev'    => $page > 1,
-            ],
-        ]);
-    }
-
-    #[Route('/api/data/cases', name: 'api_data_cases')]
-    public function dataCases(Request $request): JsonResponse
-    {
-        usleep(300);
-        $total      = 30000;
-        $perPage    = 1000;
-        $totalPages = (int) ceil($total / $perPage);
-        $page       = max(1, min((int) $request->query->get('page', 1), $totalPages));
-        $offset     = ($page - 1) * $perPage;
-
-        $faker = Factory::create('en_EN');
-        $faker->seed(99);
-
-        $finalResults = [
-            'SL1',
-            'PV2+_nOPV2_not-tested, UNDER PROCESS',
-            'NSL2, UNDER PROCESS',
-            'SL1 DISCORDANT, UNDER PROCESS',
-            'VDPV1',
-            'aVDPV3',
-            'SL2 DISCORDANT, UNDER PROCESS',
-            'WPV1, SL3',
-            'PV2+_nOPV2+, UNDER PROCESs',
-            'WPV3, SL1',
-            'SL3',
-            'iVDPV2-n',
-            'NSL2',
-            'iVDPV3',
-            'NSL2, SL2, UNDER PROCESS',
-            'WPV1',
-            'WPV3, SL3',
-            'cVDPV1',
-            'WPV3',
-            'Negative',
-            'NPEV',
-            'cVDPV2',
-            'SL1, SL3, NPEV',
-            'WPV2',
-            'aVDPV2-n',
-            'NSL3, UNDER PROCESS',
-            'NSL1, SL1, UNDER PROCESS',
-            'SL2, UNDER PROCESS',
-            'WPV1, SL3, PV2+_nOPV2-, Under Process',
-            'PV2+_nOPV2-, UNDER PROCESS',
-            'NSL3, SL3, UNDER PROCESS',
-            'SL3 DISCORDANT, UNDER PROCESS',
-            'SL1, SL3 DISCORDANT, UNDER PROCESS',
-            'VDPV2',
-            'VDPV2-n',
-            'Not done',
-            'iVDPV2',
-            'NSL1, SL1, PV2+_nOPV2-, NPEV, UNDER PROCESS',
-            'cVDPV2-n',
-            'nOPV2-L',
-            'WPV1, SL1',
-            'SL2',
-            'VDPV3',
-            'iVDPV1',
-            'cVDPV3',
-            'aVDPV1',
-            'WPV2, SL2',
-            'aVDPV2',
-            'NSL1, NSL3, UNDER PROCESS',
+      if ($i >= $offset) {
+        $cases[] = [
+          'id' => $this->makeCaseUlid($i),
+          'bid' => sprintf('AFG/%d/%04d', $year, $yearIndex),
+          'patientName' => $patientName,
+          'year' => $year,
+          'adeq' => $adeq,
+          'finalResult' => $finalResult,
+          'areaId' => $this->makeAreaUlid($areaIndex),
+          'createdAt' => $createdAt,
         ];
+      }
+    }
 
-        $cases = [];
+    return new JsonResponse([
+      'data' => $cases,
+      'meta' => [
+        'total' => $total,
+        'perPage' => $perPage,
+        'totalPages' => $totalPages,
+        'page' => $page,
+        'hasNext' => $page < $totalPages,
+        'hasPrev' => $page > 1,
+      ],
+    ]);
+  }
 
-        for ($i = 0; $i < $offset + $perPage; $i++) {
-            $year      = 2024 + (int) floor($i / 10000);
-            $yearIndex = $i % 10000;
+  #[Route('/api/data/specimens', name: 'api_data_specimens')]
+  public function dataSpecimens(Request $request): JsonResponse
+  {
+    usleep(rand(100, 600));
+    $total = 60000;
+    $perPage = 1000;
+    $totalPages = (int)ceil($total / $perPage);
+    $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+    $offset = ($page - 1) * $perPage;
 
-            $patientName = $faker->name();
-            $areaIndex   = $faker->numberBetween(0, 29999);
-            $adeq        = $faker->randomElement(['ADEQ', 'INADEQ']);
-            $finalResult = $faker->randomElement($finalResults);
-            $createdAt   = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
+    $faker = Factory::create('en_EN');
+    $faker->seed(99);
 
-            if ($i >= $offset) {
-                $cases[] = [
-                    'id'          => $this->makeCaseUlid($i),
-                    'bid'         => sprintf('AFG/%d/%04d', $year, $yearIndex),
-                    'patientName' => $patientName,
-                    'year'        => $year,
-                    'adeq'        => $adeq,
-                    'finalResult' => $finalResult,
-                    'areaId'      => $this->makeAreaUlid($areaIndex),
-                    'createdAt'   => $createdAt,
-                ];
-            }
+    $finalResults = [
+      'SL1',
+      'PV2+_nOPV2_not-tested, UNDER PROCESS',
+      'NSL2, UNDER PROCESS',
+      'SL1 DISCORDANT, UNDER PROCESS',
+      'VDPV1',
+      'aVDPV3',
+      'SL2 DISCORDANT, UNDER PROCESS',
+      'WPV1, SL3',
+      'PV2+_nOPV2+, UNDER PROCESs',
+      'WPV3, SL1',
+      'SL3',
+      'iVDPV2-n',
+      'NSL2',
+      'iVDPV3',
+      'NSL2, SL2, UNDER PROCESS',
+      'WPV1',
+      'WPV3, SL3',
+      'cVDPV1',
+      'WPV3',
+      'Negative',
+      'NPEV',
+      'cVDPV2',
+      'SL1, SL3, NPEV',
+      'WPV2',
+      'aVDPV2-n',
+      'NSL3, UNDER PROCESS',
+      'NSL1, SL1, UNDER PROCESS',
+      'SL2, UNDER PROCESS',
+      'WPV1, SL3, PV2+_nOPV2-, Under Process',
+      'PV2+_nOPV2-, UNDER PROCESS',
+      'NSL3, SL3, UNDER PROCESS',
+      'SL3 DISCORDANT, UNDER PROCESS',
+      'SL1, SL3 DISCORDANT, UNDER PROCESS',
+      'VDPV2',
+      'VDPV2-n',
+      'Not done',
+      'iVDPV2',
+      'NSL1, SL1, PV2+_nOPV2-, NPEV, UNDER PROCESS',
+      'cVDPV2-n',
+      'nOPV2-L',
+      'WPV1, SL1',
+      'SL2',
+      'VDPV3',
+      'iVDPV1',
+      'cVDPV3',
+      'aVDPV1',
+      'WPV2, SL2',
+      'aVDPV2',
+      'NSL1, NSL3, UNDER PROCESS',
+    ];
+
+    $specimens = [];
+    $caseCount = (int)ceil($total / 2); // 30000 cases
+
+    // We need to generate faker state up to offset/2 cases
+    $caseOffset = (int)floor($offset / 2);
+    for ($i = 0; $i < $caseOffset; $i++) {
+      $year = 2024 + (int)floor($i / 10000);
+      $faker->name();
+      $faker->numberBetween(0, 29999);
+      $faker->randomElement(['ADEQ', 'INADEQ']);
+      $faker->randomElement($finalResults);
+      $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31");
+    }
+
+    $specimenIndex = $offset;
+    $collected = 0;
+
+    for ($i = $caseOffset; $i < $caseCount && $collected < $perPage; $i++) {
+      $year = 2024 + (int)floor($i / 10000);
+      $yearIndex = $i % 10000;
+      $faker->name();
+      $faker->numberBetween(0, 29999);
+      $faker->randomElement(['ADEQ', 'INADEQ']);
+      $finalResult = $faker->randomElement($finalResults);
+      $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
+
+      $caseBid = sprintf('AFG/%d/%04d', $year, $yearIndex);
+      $caseUlid = $this->makeCaseUlid($i);
+
+      for ($s = 1; $s <= 2 && $collected < $perPage; $s++) {
+        $specIndex = $i * 2 + ($s - 1);
+        if ($specIndex >= $offset) {
+          $specimens[] = [
+            'id' => $this->makeSpecimenUlid($specIndex),
+            'bid' => sprintf('%s#%02d', $caseBid, $s),
+            'caseId' => $caseUlid,
+            'finalResult' => $finalResult,
+            'createdAt' => $createdAt,
+          ];
+          $collected++;
         }
-
-        return new JsonResponse([
-            'data' => $cases,
-            'meta' => [
-                'total'      => $total,
-                'perPage'    => $perPage,
-                'totalPages' => $totalPages,
-                'page'       => $page,
-                'hasNext'    => $page < $totalPages,
-                'hasPrev'    => $page > 1,
-            ],
-        ]);
+      }
     }
 
-    #[Route('/api/config', name: 'api_config')]
-    public function config(): JsonResponse
-    {
-        return new JsonResponse([
-            'app'     => 'webifa',
-            'version' => '1.0.12',
-            'env'     => $this->getEnvironment(),
-            'tables'  => [
-                'cases'     => ['id', 'bid', 'patientName', 'year', 'adeq', 'finalResult', 'areaId', 'createdAt'],
-                'areas'     => ['id', 'name'],
-                'specimens' => ['id', 'caseId'],
-            ],
-            'fetch'   => [
-                'areas' => '/api/data/areas',
-                'cases' => '/api/data/cases',
-            ],
-        ]);
-    }
+    return new JsonResponse([
+      'data' => $specimens,
+      'meta' => [
+        'total' => $total,
+        'perPage' => $perPage,
+        'totalPages' => $totalPages,
+        'page' => $page,
+        'hasNext' => $page < $totalPages,
+        'hasPrev' => $page > 1,
+      ],
+    ]);
+  }
+
+  #[Route('/api/config', name: 'api_config')]
+  public function config(): JsonResponse
+  {
+    return new JsonResponse([
+      'app' => 'webifa',
+      'version' => '1.0.12',
+      'env' => $this->getEnvironment(),
+      'tables' => [
+        'cases' => ['id', 'bid', 'patientName', 'year', 'adeq', 'finalResult', 'areaId', 'createdAt'],
+        'areas' => ['id', 'name'],
+        'specimens' => ['id', 'bid', 'caseId', 'finalResult', 'createdAt'],
+      ],
+      'fetch' => [
+        'areas' => '/api/data/areas',
+        'cases' => '/api/data/cases',
+        'specimens' => '/api/data/specimens',
+      ],
+    ]);
+  }
 }
 
 return function (array $context) {
-    return new Kernel($context['APP_ENV'] ?? 'dev', (bool) ($context['APP_DEBUG'] ?? true));
+  return new Kernel($context['APP_ENV'] ?? 'dev', (bool)($context['APP_DEBUG'] ?? true));
 };

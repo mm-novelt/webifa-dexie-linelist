@@ -20,6 +20,12 @@ export class DbService {
     await this.db.open();
   }
 
+  async openExisting(): Promise<void> {
+    if (this.db) return;
+    this.db = new Dexie('webifa');
+    await this.db.open();
+  }
+
   get isInitialized(): boolean {
     return this.db !== null;
   }
