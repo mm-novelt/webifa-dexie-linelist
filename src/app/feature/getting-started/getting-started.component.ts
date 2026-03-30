@@ -1,34 +1,43 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, WritableSignal } from '@angular/core';
 import { DbService } from '../../services/db.service';
 import { ConfigService } from '../../services/config.service';
-import { DataFetchRepository } from '../../repositories/data-fetch.repository';
+import { DataFetchRepository, TableFetchProgress } from '../../repositories/data-fetch.repository';
 
 @Component({
   selector: 'app-getting-started',
   standalone: true,
+  host: { class: 'flex justify-center items-center h-screen' },
   template: `
-    <div class="flex items-center justify-center min-h-screen">
-      <div class="rounded-lg border bg-white p-8 shadow-md w-96">
+    <div class="bg-neutral-primary-soft block max-w-sm p-6 border border-default rounded-base shadow-xs">
+      <h5 class="mb-3 text-2xl font-semibold tracking-tight text-heading leading-8">IDB Sync</h5>
+      <p class="text-body mb-6">Chargement des données, veuillez patienter</p>
         @if (query.isPending()) {
           <p class="text-lg font-medium mb-4">Initialisation...</p>
-          <div class="w-full bg-gray-200 rounded-full h-2.5">
-            <div class="bg-blue-600 h-2.5 rounded-full animate-pulse" style="width: 20%"></div>
-          </div>
         } @else if (query.isError()) {
           <p class="text-lg font-medium text-red-500">Erreur lors du chargement de la configuration.</p>
-        } @else if (isFetching()) {
-          <p class="text-lg font-medium mb-2">Chargement des données...</p>
-          <p class="text-sm text-gray-500 mb-4">{{ fetchLabel() }}</p>
-          <div class="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              [style.width.%]="fetchProgress()"
-            ></div>
-          </div>
-        } @else if (isDone()) {
-          <p class="text-lg font-medium text-green-600">Base de données initialisée.</p>
+        } @else if (isFetching() || isDone()) {
+          <p class="text-lg font-medium mb-4">{{ isDone() ? 'Chargement terminé.' : 'Chargement des données...' }}</p>
+          @for (progress of tableProgressList(); track progress.tableName) {
+            <div class="mb-3">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="font-medium">{{ progress.tableName }}</span>
+                <span class="text-gray-500">{{ progress.recordsLoaded }}/{{ progress.total }} ({{ progress.percent }}%)</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                  [class]="progress.done ? 'bg-green-500' : 'bg-blue-600'"
+                  class="h-2.5 rounded-full transition-all duration-300"
+                  [style.width.%]="progress.percent"
+                ></div>
+              </div>
+            </div>
+          }
+          @if (isDone()) {
+            <button class="mt-4 w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-base hover:bg-blue-700 transition-colors">
+              Start application
+            </button>
+          }
         }
-      </div>
     </div>
   `,
 })
@@ -41,8 +50,9 @@ export class GettingStartedComponent {
 
   isFetching = signal(false);
   isDone = signal(false);
-  fetchLabel = signal('');
-  fetchProgress = signal(0);
+
+  private tableProgressSignals = signal<WritableSignal<TableFetchProgress>[]>([]);
+  tableProgressList = computed(() => this.tableProgressSignals().map((s) => s()));
 
   constructor() {
     effect(async () => {
@@ -57,16 +67,18 @@ export class GettingStartedComponent {
         return;
       }
 
+      const progressSignals = entries.map(([tableName]) =>
+        signal<TableFetchProgress>({ tableName, recordsLoaded: 0, total: 0, percent: 0, done: false }),
+      );
+
+      this.tableProgressSignals.set(progressSignals);
       this.isFetching.set(true);
 
       for (let i = 0; i < entries.length; i++) {
         const [tableName, url] = entries[i];
-        this.fetchLabel.set(tableName);
-        this.fetchProgress.set(Math.round((i / entries.length) * 100));
-        await this.dataFetchRepository.fetchAndStore(tableName, url);
+        await this.dataFetchRepository.fetchAndStore(tableName, url, progressSignals[i]);
       }
 
-      this.fetchProgress.set(100);
       this.isFetching.set(false);
       this.isDone.set(true);
     });

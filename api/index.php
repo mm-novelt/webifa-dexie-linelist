@@ -30,7 +30,8 @@ class Kernel extends BaseKernel
     #[Route('/api/data/areas', name: 'api_data_areas')]
     public function dataAreas(\Symfony\Component\HttpFoundation\Request $request): JsonResponse
     {
-        $total     = 5000;
+        usleep(300);
+        $total     = 30000;
         $perPage   = 1000;
         $totalPages = (int) ceil($total / $perPage);
         $page      = max(1, min((int) $request->query->get('page', 1), $totalPages));
