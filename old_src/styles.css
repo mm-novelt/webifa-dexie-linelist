@@ -1,0 +1,21 @@
+/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f6f8fb;
+}
+
+table > th  {
+  background-color: #f80000;
+}
+
+.hover-blue:hover {
+  @apply bg-blue-200 !important
+}
+
+
+.hover-blue:hover > th {
+  @apply bg-blue-200 !important
+}
