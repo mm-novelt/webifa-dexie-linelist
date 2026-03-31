@@ -66,6 +66,7 @@ export class LinelistComponent {
   isSearchLoading = signal<boolean>(false);
 
   readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
+  showFilters = signal(true);
 
   readonly filteredIds = computed<string[] | null>(() => {
     const map = this.filterResults();
@@ -79,6 +80,19 @@ export class LinelistComponent {
 
   selectedInternalFilter = signal<InternalFilter | null>(null);
   private internalFilterInitialized = false;
+
+  async resetFilters(): Promise<void> {
+    this.filterResults.set(new Map());
+    this.showFilters.set(false);
+    setTimeout(() => this.showFilters.set(true));
+    this.currentPage.set(1);
+    this.isSearchLoading.set(true);
+    try {
+      await this.loadData();
+    } finally {
+      this.isSearchLoading.set(false);
+    }
+  }
 
   readonly reloadFn: () => Promise<void> = async () => {
     this.currentPage.set(1);

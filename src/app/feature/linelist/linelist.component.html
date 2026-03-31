@@ -17,6 +17,7 @@
     }
     <div class="p-4 flex items-center justify-between space-x-4">
       <div class="flex items-center gap-3">
+        @if (showFilters()) {
         @for (filter of filters(); track filter.key) {
           @switch (filter.type) {
             @case ('text') {
@@ -63,6 +64,16 @@
                 [reloadFn]="reloadFn"/>
             }
           }
+        }
+        }
+        @if (filters().length > 0) {
+          <button
+            type="button"
+            [disabled]="filterResults().size === 0"
+            class="py-2 px-3 text-sm border border-default-medium rounded-base bg-neutral-secondary-medium text-body hover:bg-neutral-secondary-strong cursor-pointer disabled:opacity-40 disabled:cursor-default"
+            (click)="resetFilters()">
+            Reset filters
+          </button>
         }
       </div>
     </div>
