@@ -60,7 +60,7 @@ export class SearchEngineService {
     const batch: SearchEntry[] = [];
 
     for (const [tableName, properties] of Object.entries(searchConfig)) {
-      const items = await this.db.instance.table(tableName).toArray() as Record<string, unknown>[];
+      const items = await this.db.instance.table(`${tableName}_indexed`).toArray() as Record<string, unknown>[];
 
       for (const item of items) {
         const objectId = item['id'] as string;
@@ -141,7 +141,7 @@ export class SearchEngineService {
 
   private async countItems(searchConfig: Record<string, string[]>): Promise<number[]> {
     return Promise.all(
-      Object.keys(searchConfig).map(tableName => this.db.instance.table(tableName).count()),
+      Object.keys(searchConfig).map(tableName => this.db.instance.table(`${tableName}_indexed`).count()),
     );
   }
 
@@ -162,7 +162,7 @@ export class SearchEngineService {
     const result = new Map<string, Map<string, Record<string, unknown>>>();
     await Promise.all(
       [...needed].map(async relTable => {
-        const rows = await this.db.instance.table(relTable).toArray() as Record<string, unknown>[];
+        const rows = await this.db.instance.table(`${relTable}_data`).toArray() as Record<string, unknown>[];
         const map = new Map<string, Record<string, unknown>>();
         for (const row of rows) map.set(row['id'] as string, row);
         result.set(relTable, map);

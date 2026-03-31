@@ -69,6 +69,13 @@ class Kernel extends BaseKernel
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
     $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+
+    $cacheKey = "api_data_areas_page_{$page}";
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success) {
+      return new JsonResponse($cached);
+    }
+
     $offset = ($page - 1) * $perPage;
 
     $faker = Factory::create('en_EN');
@@ -96,7 +103,7 @@ class Kernel extends BaseKernel
       }
     }
 
-    return new JsonResponse([
+    $response = [
       'data' => $areas,
       'meta' => [
         'total' => $total,
@@ -106,7 +113,9 @@ class Kernel extends BaseKernel
         'hasNext' => $page < $totalPages,
         'hasPrev' => $page > 1,
       ],
-    ]);
+    ];
+    apcu_store($cacheKey, $response);
+    return new JsonResponse($response);
   }
 
   #[Route('/api/data/cases', name: 'api_data_cases')]
@@ -116,6 +125,13 @@ class Kernel extends BaseKernel
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
     $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+
+    $cacheKey = "api_data_cases_page_{$page}";
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success) {
+      return new JsonResponse($cached);
+    }
+
     $offset = ($page - 1) * $perPage;
 
     $faker = Factory::create('en_EN');
@@ -199,7 +215,7 @@ class Kernel extends BaseKernel
       }
     }
 
-    return new JsonResponse([
+    $response = [
       'data' => $cases,
       'meta' => [
         'total' => $total,
@@ -209,7 +225,9 @@ class Kernel extends BaseKernel
         'hasNext' => $page < $totalPages,
         'hasPrev' => $page > 1,
       ],
-    ]);
+    ];
+    apcu_store($cacheKey, $response);
+    return new JsonResponse($response);
   }
 
   #[Route('/api/data/specimens', name: 'api_data_specimens')]
@@ -219,6 +237,13 @@ class Kernel extends BaseKernel
     $perPage = 1000;
     $totalPages = (int)ceil($total / $perPage);
     $page = max(1, min((int)$request->query->get('page', 1), $totalPages));
+
+    $cacheKey = "api_data_specimens_page_{$page}";
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success) {
+      return new JsonResponse($cached);
+    }
+
     $offset = ($page - 1) * $perPage;
 
     $faker = Factory::create('en_EN');
@@ -320,7 +345,7 @@ class Kernel extends BaseKernel
       }
     }
 
-    return new JsonResponse([
+    $response = [
       'data' => $specimens,
       'meta' => [
         'total' => $total,
@@ -330,7 +355,9 @@ class Kernel extends BaseKernel
         'hasNext' => $page < $totalPages,
         'hasPrev' => $page > 1,
       ],
-    ]);
+    ];
+    apcu_store($cacheKey, $response);
+    return new JsonResponse($response);
   }
 
   #[Route('/api/config', name: 'api_config')]

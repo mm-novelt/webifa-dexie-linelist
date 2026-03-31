@@ -148,11 +148,11 @@ export class GettingStartedComponent {
 
       await Promise.all(
         entries.map(async ([tableName, url], i) => {
-          const count = await this.db.instance.table(tableName).count();
+          const count = await this.db.instance.table(`${tableName}_data`).count();
           if (count > 0) {
             progressSignals[i].set({ tableName, recordsLoaded: count, total: count, percent: 100, done: true });
           } else {
-            await this.dataFetchRepository.fetchAndStore(tableName, url, progressSignals[i]);
+            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i]);
           }
         }),
       );

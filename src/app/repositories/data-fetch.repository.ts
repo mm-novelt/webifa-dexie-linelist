@@ -32,11 +32,16 @@ export class DataFetchRepository {
   async fetchAndStore(
     tableName: string,
     url: string,
+    indexDefinitions: string[],
     progress: WritableSignal<TableFetchProgress>,
   ): Promise<void> {
+    const indexedFields = extractIndexedFieldNames(indexDefinitions);
     let page = 1;
     let hasNext = true;
     let recordsLoaded = 0;
+
+    const dataTable = this.db.instance.table(`${tableName}_data`);
+    const indexedTable = this.db.instance.table(`${tableName}_indexed`);
 
     while (hasNext) {
       const response = await this.queryClient.fetchQuery<PagedResponse>({
@@ -50,8 +55,12 @@ export class DataFetchRepository {
         gcTime: Infinity,
       });
 
-      const table = this.db.instance.table(tableName);
-      await table.bulkPut(response.data);
+      const indexedRecords = response.data.map(record => pick(record, indexedFields));
+
+      await Promise.all([
+        dataTable.bulkPut(response.data),
+        indexedTable.bulkPut(indexedRecords),
+      ]);
 
       recordsLoaded += response.data.length;
       hasNext = response.meta.hasNext;
@@ -66,4 +75,28 @@ export class DataFetchRepository {
       });
     }
   }
+}
+
+function extractIndexedFieldNames(indexes: string[]): string[] {
+  const fields = new Set<string>();
+  for (const idx of indexes) {
+    const clean = idx.trim();
+    if (clean.startsWith('[') && clean.endsWith(']')) {
+      for (const part of clean.slice(1, -1).split('+')) {
+        fields.add(part.trim());
+      }
+    } else {
+      const name = clean.replace(/^[+&*]+/, '');
+      if (name) fields.add(name);
+    }
+  }
+  return [...fields];
+}
+
+function pick(record: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field in record) result[field] = record[field];
+  }
+  return result;
 }

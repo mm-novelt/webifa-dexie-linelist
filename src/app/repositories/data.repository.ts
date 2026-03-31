@@ -18,15 +18,18 @@ export class DataRepository {
   private db = inject(DbService);
 
   async getById(tableName: string, id: unknown): Promise<IdbObject | undefined> {
-    const table = this.db.instance.table(tableName);
+    const table = this.db.instance.table(`${tableName}_data`);
     const record = await table.get(id as string);
     if (!record) return undefined;
     return IdbObjectSchema.parse(record);
   }
 
   async getByForeignKey(tableName: string, foreignKey: string, value: unknown): Promise<IdbObject[]> {
-    const table = this.db.instance.table(tableName);
-    const records = await table.where(foreignKey).equals(value as IndexableType).toArray();
+    const indexedTable = this.db.instance.table(`${tableName}_indexed`);
+    const ids = await indexedTable.where(foreignKey).equals(value as IndexableType).primaryKeys();
+    if (ids.length === 0) return [];
+    const dataTable = this.db.instance.table(`${tableName}_data`);
+    const records = await dataTable.where('id').anyOf(ids as string[]).toArray();
     return records.map(r => IdbObjectSchema.parse(r));
   }
 
@@ -39,11 +42,11 @@ export class DataRepository {
     filteredIds?: string[],
   ): Promise<PaginatedResult> {
     const offset = (page - 1) * pageSize;
-    const table = this.db.instance.table(tableName);
+    const dataTable = this.db.instance.table(`${tableName}_data`);
+    const indexedTable = this.db.instance.table(`${tableName}_indexed`);
 
     if (filteredIds !== undefined) {
-      const primaryKey = table.schema.primKey.name;
-      const rows = await table.where(primaryKey).anyOf(filteredIds).toArray();
+      const rows = await dataTable.where('id').anyOf(filteredIds).toArray();
       rows.sort((a, b) => {
         const av = a[orderColumn] as string;
         const bv = b[orderColumn] as string;
@@ -61,15 +64,23 @@ export class DataRepository {
       };
     }
 
-    let collection = table.orderBy(orderColumn);
+    let collection = indexedTable.orderBy(orderColumn);
     if (orderDirection === 'DESC') {
       collection = collection.reverse();
     }
 
-    const [total, rows] = await Promise.all([
-      table.count(),
-      collection.offset(offset).limit(pageSize).toArray(),
+    const [total, orderedIds] = await Promise.all([
+      indexedTable.count(),
+      collection.offset(offset).limit(pageSize).primaryKeys(),
     ]);
+
+    const recordMap = new Map(
+      (await dataTable.where('id').anyOf(orderedIds as string[]).toArray())
+        .map(r => [r['id'] as string, r]),
+    );
+    const rows = (orderedIds as string[])
+      .map(id => recordMap.get(id))
+      .filter((r): r is Record<string, unknown> => r !== undefined);
 
     return {
       data: rows.map(row => IdbObjectSchema.parse(row)),
@@ -82,7 +93,7 @@ export class DataRepository {
 
   async searchByText(tableName: string, fields: string[], term: string): Promise<string[]> {
     if (!term) return [];
-    const table = this.db.instance.table(tableName);
+    const table = this.db.instance.table(`${tableName}_indexed`);
     const indexedFields = this.getIndexedFields(table, fields);
     if (indexedFields.length === 0) return [];
 
@@ -100,7 +111,7 @@ export class DataRepository {
   }
 
   async searchByExactValue(tableName: string, field: string, value: string): Promise<string[]> {
-    const table = this.db.instance.table(tableName);
+    const table = this.db.instance.table(`${tableName}_indexed`);
     const keys = await table.where(field).equals(value).primaryKeys();
     return keys as string[];
   }
