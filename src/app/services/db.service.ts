@@ -13,8 +13,6 @@ export class DbService {
       schema[`${table}_data`] = 'id';
       schema[`${table}_indexed`] = [...new Set(indexes)].join(', ');
     }
-    schema['searchEngine'] = '++id, objectId, tableName, property, value, [tableName+value], [property+value]';
-
     console.log('Schema', schema);
 
     this.db = new Dexie('webifa');

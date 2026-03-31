@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { DbService } from '../../services/db.service';
 import { ConfigService } from '../../services/config.service';
 import { DataFetchRepository, TableFetchProgress } from '../../repositories/data-fetch.repository';
-import { SearchEngineService } from '../../services/search-engine.service';
 
 @Component({
   selector: 'app-getting-started',
@@ -17,7 +16,6 @@ export class GettingStartedComponent {
   private db = inject(DbService);
   private configService = inject(ConfigService);
   private dataFetchRepository = inject(DataFetchRepository);
-  private searchEngine = inject(SearchEngineService);
   private router = inject(Router);
 
   query = this.configService.query;
@@ -62,7 +60,7 @@ export class GettingStartedComponent {
           if (count > 0) {
             progressSignals[i].set({ tableName, recordsLoaded: count, total: count, percent: 100, done: true });
           } else {
-            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], undefined, config.multiEntry[tableName]);
+            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], config.multiEntry[tableName]);
           }
         }),
       );

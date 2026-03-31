@@ -2,7 +2,6 @@ import { inject, Injectable, WritableSignal } from '@angular/core';
 import { IndexableType } from 'dexie';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { DbService } from '../services/db.service';
-import { SearchEngineService } from '../services/search-engine.service';
 
 interface PageMeta {
   total: number;
@@ -31,14 +30,11 @@ export interface TableFetchProgress {
 export class DataFetchRepository {
   private queryClient = inject(QueryClient);
   private db = inject(DbService);
-  private searchEngine = inject(SearchEngineService);
-
   async fetchAndStore(
     tableName: string,
     url: string,
     indexDefinitions: string[],
     progress: WritableSignal<TableFetchProgress>,
-    searchProperties?: string[],
     multiEntry?: Record<string, string>,
   ): Promise<void> {
     const indexedFields = extractIndexedFieldNames(indexDefinitions);
@@ -73,14 +69,10 @@ export class DataFetchRepository {
         return picked;
       });
 
-      const writes: Promise<IndexableType | void>[] = [
+      await Promise.all([
         dataTable.bulkPut(response.data),
         indexedTable.bulkPut(indexedRecords),
-      ];
-      if (searchProperties?.length) {
-        writes.push(this.searchEngine.indexItems(tableName, searchProperties, indexedRecords));
-      }
-      await Promise.all(writes);
+      ]);
 
       recordsLoaded += response.data.length;
       hasNext = response.meta.hasNext;
