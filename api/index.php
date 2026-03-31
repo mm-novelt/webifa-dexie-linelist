@@ -443,12 +443,12 @@ class Kernel extends BaseKernel
               ]
             ],
             [
-              'name' => 'Area published and case unpublished',
+              'name' => 'Area un published and case unpublished',
               'index' => '[areaPublished+published]',
               'indexWithFilter' => '[id+areaPublished+published]',
               'default' => true,
               'value' => [
-                'areaPublished' => 1,
+                'areaPublished' => 0,
                 'published' => 0,
               ]
             ],

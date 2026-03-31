@@ -14,9 +14,17 @@ export interface PaginatedResult {
   totalPages: number;
 }
 
+interface FilteredOrderCache {
+  key: string;
+  orderedFilteredIds: string[];
+  pageSize: number;
+  pages: Map<number, string[]>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DataRepository {
   private db = inject(DbService);
+  private filteredOrderCache: FilteredOrderCache | null = null;
 
   async getById(tableName: string, id: string): Promise<IdbObject | undefined> {
     const table = this.db.instance.table(`${tableName}_data`);
@@ -49,6 +57,7 @@ export class DataRepository {
 
     let effectiveFilteredIds: string[] | undefined = undefined;
 
+    // todo gérer ausi du cache ici
     if (selectedInternalFilter) {
       const filterVals = compoundValues(selectedInternalFilter.index, selectedInternalFilter.value);
       if (filteredIds?.length) {
@@ -68,13 +77,28 @@ export class DataRepository {
     }
 
     if (effectiveFilteredIds !== undefined) {
-      const allowedSet = new Set(effectiveFilteredIds);
-      let collection = indexedTable.orderBy(orderColumn);
-      if (orderDirection === 'DESC') collection = collection.reverse();
-      const allOrderedIds = await collection.primaryKeys() as string[];
-      const orderedFilteredIds = allOrderedIds.filter(id => allowedSet.has(id));
-      const total = orderedFilteredIds.length;
-      const pageIds = orderedFilteredIds.slice(offset, offset + pageSize);
+      const cacheKey = buildCacheKey(effectiveFilteredIds, orderColumn, orderDirection);
+      let cache = this.filteredOrderCache;
+
+      if (!cache || cache.key !== cacheKey || cache.pageSize !== pageSize) {
+        const allowedSet = new Set(effectiveFilteredIds);
+        let collection = indexedTable.orderBy(orderColumn);
+        if (orderDirection === 'DESC') collection = collection.reverse();
+        const allOrderedIds = await collection.primaryKeys() as string[];
+        const orderedFilteredIds = allOrderedIds.filter(id => allowedSet.has(id));
+
+        const pages = new Map<number, string[]>();
+        for (let p = 1; p <= Math.ceil(orderedFilteredIds.length / pageSize); p++) {
+          const off = (p - 1) * pageSize;
+          pages.set(p, orderedFilteredIds.slice(off, off + pageSize));
+        }
+
+        cache = { key: cacheKey, orderedFilteredIds, pageSize, pages };
+        this.filteredOrderCache = cache;
+      }
+
+      const total = cache.orderedFilteredIds.length;
+      const pageIds = cache.pages.get(page) ?? [];
       const recordMap = new Map(
         (await dataTable.where('id').anyOf(pageIds).toArray())
           .map(r => [r['id'] as string, r]),
@@ -175,4 +199,8 @@ export class DataRepository {
 
 function compoundValues(index: string, value: Record<string, string | number>): (string | number)[] {
   return index.slice(1, -1).split('+').map(f => value[f]);
+}
+
+function buildCacheKey(ids: string[], orderColumn: string, orderDirection: string): string {
+  return `${orderColumn}:${orderDirection}:${ids.slice().sort().join(',')}`;
 }

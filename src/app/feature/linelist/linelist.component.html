@@ -52,9 +52,9 @@
       </div>
       @if (internalFilters().length > 0) {
         <select
-          class="text-sm border border-default rounded-base px-3 py-1.5 bg-neutral-primary-soft text-body focus:outline-none"
-          [value]="selectedInternalFilter()?.name ?? ''"
-          (change)="onInternalFilterChange($any($event.target).value)">
+          class="text-sm border border-default rounded-base px-3 py-2 min-w-[220px] bg-neutral-primary-soft text-body focus:outline-none"
+          [ngModel]="selectedInternalFilter()?.name ?? ''"
+          (ngModelChange)="onInternalFilterChange($event)">
           <option value="">All records</option>
           @for (f of internalFilters(); track f.name) {
             <option [value]="f.name">{{ f.name }}</option>
