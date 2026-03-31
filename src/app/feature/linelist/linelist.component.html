@@ -11,6 +11,7 @@
                 [filterKey]="filter.key"
                 [table]="table()"
                 [fields]="$any(filter).fields"
+                [fieldOptions]="$any(filter).fieldOptions ?? []"
                 [relatedSearches]="$any(filter).relatedSearches ?? []"
                 [placeholder]="filter.placeholder ?? 'Search'"
                 [filterResultsSignal]="filterResults"

@@ -199,7 +199,6 @@ class Kernel extends BaseKernel
       $patientName = $faker->name();
       $areaIndex = $faker->numberBetween(0, 29999);
       $adeq = $faker->randomElement(['ADEQ', 'INADEQ', 'UNKNOWN', 'PENDING']);
-      $finalResult = $faker->randomElement($finalResults);
       $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
 
       if ($i >= $offset) {
@@ -209,7 +208,8 @@ class Kernel extends BaseKernel
           'patientName' => $patientName,
           'year' => $year,
           'adeq' => $adeq,
-          'finalResult' => $finalResult,
+          'dateOfOnset' => $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d'),
+          'finalResult' => explode(', ',$faker->randomElement($finalResults)),
           'areaId' => $this->makeAreaUlid($areaIndex),
           'published' => $faker->numberBetween(1, 10) <= 9 ? 1 : 0,
           'createdAt' => $createdAt,
@@ -326,7 +326,7 @@ class Kernel extends BaseKernel
       $faker->name();
       $faker->numberBetween(0, 29999);
       $faker->randomElement(['ADEQ', 'INADEQ']);
-      $finalResult = $faker->randomElement($finalResults);
+      $finalResult = explode(', ',$faker->randomElement($finalResults));
       $createdAt = $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s');
 
       $caseBid = sprintf('AFG/%d/%04d', $year, $yearIndex);
@@ -340,8 +340,8 @@ class Kernel extends BaseKernel
             'bid' => sprintf('%s#%02d', $caseBid, $s),
             'caseId' => $caseUlid,
             'finalResult' => $finalResult,
-            'itdResult' => $faker->randomElement($finalResults),
-            'isolationResult' => $faker->randomElement($finalResults),
+            'itdResult' => explode(', ',$faker->randomElement($finalResults)),
+            'isolationResult' => explode(', ',$faker->randomElement($finalResults)),
             'createdAt' => $createdAt,
           ], $this->makeExtraFields($faker));
           $collected++;
@@ -371,18 +371,16 @@ class Kernel extends BaseKernel
       'app' => 'webifa',
       'version' => '1',
       'tables' => [
-        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'published', 'createdAt', '[id+areaPublished+published]', '[areaPublished+published]'],
+        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'published','dateOfOnset', 'createdAt', '[id+areaPublished+published]', '[areaPublished+published]'],
         'areas' => ['id', 'name', 'published', 'createdAt'],
         'specimens' => ['id', '*bid', 'caseId', '*finalResult', 'createdAt'],
       ],
       'multiEntry' => [
         'cases' => [
-          'finalResult' => ', ',
           'bid' => '/',
           'patientName' => ' ',
         ],
         'specimens' => [
-          'finalResult' => ', ',
           'bid' => '/',
         ],
       ],
@@ -409,7 +407,7 @@ class Kernel extends BaseKernel
             ['type' => 'string', 'key' => 'patientName', 'label' => 'Patient name', 'sortable' => true],
             ['type' => 'relation', 'key' => 'areaId', 'label' => 'Area', 'table' => 'areas', 'displayProperty' => 'name'],
             ['type' => 'enum', 'key' => 'adeq', 'label' => 'Adeq', 'sortable' => false, 'variants' => ['ADEQ' => 'success', 'INADEQ' => 'danger']],
-            ['type' => 'enum', 'key' => 'finalResult', 'label' => 'Final result', 'sortable' => false, 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
+            ['type' => 'enum', 'multiple' => true, 'separator' => ' + ', 'key' => 'finalResult', 'label' => 'Final result', 'sortable' => false, 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
             [
               'type' => 'oneToMany', 'key' => 'specimens', 'label' => 'Specimens', 'sortable' => false,
               'table' => 'specimens', 'foreignKey' => 'caseId', 'displayProperty' => 'bid',
@@ -430,6 +428,11 @@ class Kernel extends BaseKernel
               'type' => 'text', 'key' => 'search', 'fields' => ['bid', 'patientName', 'finalResult'],
               'relatedSearches' => [['table' => 'areas', 'field' => 'name', 'foreignKey' => 'areaId']],
               'placeholder' => 'Search...',
+              'fieldOptions' => [
+                ['value' => 'bid', 'label' => 'Case BID'],
+                ['value' => 'patientName', 'label' => 'Patient name'],
+                ['value' => 'finalResult', 'label' => 'Final result'],
+              ],
             ],
             ['type' => 'select', 'key' => 'adeq', 'field' => 'adeq', 'placeholder' => 'All Adeq result', 'options' => [['label' => 'ADEQ', 'value' => 'ADEQ'], ['label' => 'INADEQ', 'value' => 'INADEQ']]],
             ['type' => 'foreignKey', 'key' => 'areaFilter', 'table' => 'areas', 'displayProperty' => 'name', 'foreignKey' => 'areaId', 'placeholder' => 'Area...'],

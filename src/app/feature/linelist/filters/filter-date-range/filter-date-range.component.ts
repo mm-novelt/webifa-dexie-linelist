@@ -1,29 +1,34 @@
 import { Component, inject, input, signal, WritableSignal } from '@angular/core';
 import { DataRepository } from '../../../../repositories/data.repository';
 import { DateExactFilter, DateRangeFilter, DateFilterValue } from './filter-date-range.models';
+import { parseDateInput } from './filter-date-range.utils';
 
 export type { DateExactFilter, DateRangeFilter, DateFilterValue };
 
-const YEAR_RE = /^\d{4}$/;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function parseDateInput(raw: string): DateFilterValue | null {
-  const parts = raw.trim().split(/\s+/);
-  if (parts.length === 1 && parts[0]) {
-    const val = parts[0];
-    if (YEAR_RE.test(val) || DATE_RE.test(val)) return { mode: 'exact', value: val };
-    return null;
-  }
-  if (parts.length === 2) {
-    const [from, to] = parts;
-    if ((YEAR_RE.test(from) && YEAR_RE.test(to)) || (DATE_RE.test(from) && DATE_RE.test(to))) {
-      return { mode: 'range', from, to };
-    }
-    return null;
-  }
-  return null;
-}
-
+/**
+ * Date range filter component.
+ *
+ * Accepts free-text input that is parsed into either an exact-match or a
+ * range query against an indexed date field. A green checkmark icon appears
+ * when the current input is a valid date expression.
+ *
+ * Input is debounced by 300 ms. Clearing the input removes this filter key
+ * from the shared filter-results map.
+ *
+ * When the `numeric` input is `true`, parsed date strings are cast to numbers
+ * before the IndexedDB query (useful for fields stored as integer timestamps).
+ *
+ * ### Inputs
+ * | Input | Description |
+ * |---|---|
+ * | `filterKey` | Unique key identifying this filter in the shared results map. |
+ * | `table` | Logical name of the table to search. |
+ * | `field` | Indexed field to query. |
+ * | `numeric` | When `true`, date strings are cast to numbers before querying. |
+ * | `placeholder` | Input placeholder text. |
+ * | `filterResultsSignal` | Shared signal holding all active filter results. |
+ * | `reloadFn` | Callback invoked after the filter map is updated to refresh the list. |
+ */
 @Component({
   selector: 'app-filter-date-range',
   standalone: true,
@@ -52,6 +57,7 @@ function parseDateInput(raw: string): DateFilterValue | null {
   `,
 })
 export class FilterDateRangeComponent {
+  /** Stable unique ID used to associate the `<label>` with the `<input>`. */
   readonly inputId = `filter-date-${Math.random().toString(36).slice(2)}`;
 
   filterKey = input.required<string>();
@@ -64,10 +70,19 @@ export class FilterDateRangeComponent {
 
   private dataRepository = inject(DataRepository);
 
+  /** The last successfully parsed date filter value; `null` when input is invalid or empty. */
   parsedValue = signal<DateFilterValue | null>(null);
 
   private debounceTimer?: ReturnType<typeof setTimeout>;
 
+  /**
+   * Handles raw input events with a 300 ms debounce.
+   *
+   * On debounce resolution:
+   * - Empty input clears the filter and triggers a reload.
+   * - Valid input triggers an exact-match or range query and updates the signal.
+   * - Invalid input updates `parsedValue` to `null` but does not update the filter map.
+   */
   onInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     clearTimeout(this.debounceTimer);
