@@ -16,7 +16,7 @@ import { FilterTextComponent } from './filters/filter-text/filter-text.component
 import { FilterSelectComponent } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
 import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
-import { ColumnConfig, FilterConfig, OneToManyColumn } from './linelist.models';
+import { ColumnConfig, FilterConfig, InternalFilterConfig, OneToManyColumn } from './linelist.models';
 
 @Component({
   selector: 'app-linelist',
@@ -65,6 +65,10 @@ export class LinelistComponent implements OnInit {
     { key: 'createdAt', label: 'Created At', sortable: true, type: 'date', format: 'dd/MM/yyyy' },
   ];
 
+  readonly internalFilters: InternalFilterConfig[] = [
+    { type: 'foreignKey', sourceTable: 'areas', sourceField: 'published', sourceValue: 1, targetForeignKey: 'areaId' },
+  ];
+
   readonly filters: FilterConfig[] = [
     {
       type: 'text',
@@ -91,6 +95,8 @@ export class LinelistComponent implements OnInit {
   totalPages = signal<number>(0);
   expandedRows = signal<Map<string, string>>(new Map());
 
+  readonly internalFilteredIds = signal<string[] | null>(null);
+
   readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
 
   readonly filteredIds = computed<string[] | null>(() => {
@@ -109,6 +115,7 @@ export class LinelistComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
+    this.internalFilteredIds.set(await this.resolveInternalFilters());
     await this.loadData();
   }
 
@@ -150,16 +157,43 @@ export class LinelistComponent implements OnInit {
     this.expandedRows.set(next);
   }
 
+  private async resolveInternalFilters(): Promise<string[] | null> {
+    if (this.internalFilters.length === 0) return null;
+    const results = await Promise.all(
+      this.internalFilters.map(async (f) => {
+        const sourceIds = await this.dataRepository.searchByExactValue(f.sourceTable, f.sourceField, f.sourceValue);
+        if (sourceIds.length === 0) return [];
+        return this.dataRepository.searchByAnyOf(this.table(), f.targetForeignKey, sourceIds);
+      }),
+    );
+    return results.reduce((acc, ids) => {
+      const lookup = new Set(ids);
+      return acc.filter(id => lookup.has(id));
+    });
+  }
+
   private async loadData(): Promise<void> {
     this.expandedRows.set(new Map());
     const filteredIds = this.filteredIds();
+    const internalIds = this.internalFilteredIds();
+
+    let finalIds: string[] | undefined;
+    if (filteredIds !== null && internalIds !== null) {
+      const lookup = new Set(internalIds);
+      finalIds = filteredIds.filter(id => lookup.has(id));
+    } else if (filteredIds !== null) {
+      finalIds = filteredIds;
+    } else if (internalIds !== null) {
+      finalIds = internalIds;
+    }
+
     const result = await this.dataRepository.getPaginated(
       this.table(),
       this.currentPage(),
       this.pageSize,
       this.orderColumn(),
       this.orderDirection(),
-      filteredIds ?? undefined,
+      finalIds,
     );
     this.rows.set(result.data);
     this.total.set(result.total);

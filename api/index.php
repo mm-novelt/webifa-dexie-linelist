@@ -98,6 +98,7 @@ class Kernel extends BaseKernel
         $areas[] = [
           'id' => $this->makeAreaUlid($i),
           'name' => $name,
+          'published' => $faker->numberBetween(1, 10) <= 8 ? 1 : 0,
           'createdAt' => $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s'),
         ];
       }
@@ -368,7 +369,7 @@ class Kernel extends BaseKernel
       'version' => '1',
       'tables' => [
         'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'createdAt'],
-        'areas' => ['id', 'name', 'createdAt'],
+        'areas' => ['id', 'name', 'published', 'createdAt'],
         'specimens' => ['id', '*bid', 'caseId', '*finalResult', 'createdAt'],
       ],
       'multiEntry' => [

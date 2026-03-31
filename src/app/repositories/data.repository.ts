@@ -46,17 +46,22 @@ export class DataRepository {
     const indexedTable = this.db.instance.table(`${tableName}_indexed`);
 
     if (filteredIds !== undefined) {
-      const rows = await dataTable.where('id').anyOf(filteredIds).toArray();
-      rows.sort((a, b) => {
-        const av = a[orderColumn] as string;
-        const bv = b[orderColumn] as string;
-        if (av < bv) return orderDirection === 'ASC' ? -1 : 1;
-        if (av > bv) return orderDirection === 'ASC' ? 1 : -1;
-        return 0;
-      });
-      const total = rows.length;
+      const allowedSet = new Set(filteredIds);
+      let collection = indexedTable.orderBy(orderColumn);
+      if (orderDirection === 'DESC') collection = collection.reverse();
+      const allOrderedIds = await collection.primaryKeys() as string[];
+      const orderedFilteredIds = allOrderedIds.filter(id => allowedSet.has(id));
+      const total = orderedFilteredIds.length;
+      const pageIds = orderedFilteredIds.slice(offset, offset + pageSize);
+      const recordMap = new Map(
+        (await dataTable.where('id').anyOf(pageIds).toArray())
+          .map(r => [r['id'] as string, r]),
+      );
+      const rows = pageIds
+        .map(id => recordMap.get(id))
+        .filter((r): r is IdbObject => r !== undefined);
       return {
-        data: rows.slice(offset, offset + pageSize).map(row => IdbObjectSchema.parse(row)),
+        data: rows.map(row => IdbObjectSchema.parse(row)),
         total,
         page,
         pageSize,
@@ -132,7 +137,7 @@ export class DataRepository {
   async searchByTextAsRecords(tableName: string, fields: string[], term: string): Promise<IdbObject[]> {
     const ids = await this.searchByText(tableName, fields, term);
     if (ids.length === 0) return [];
-    const dataTable = this.db.instance.table(`${tableName}_data`);
+    const dataTable = this.db.instance.table(`${tableName}_indexed`);
     const records = await dataTable.where('id').anyOf(ids).toArray();
     return records.map(r => IdbObjectSchema.parse(r));
   }

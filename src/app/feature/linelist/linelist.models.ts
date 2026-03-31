@@ -53,3 +53,13 @@ export interface DateRangeFilterConfig {
 }
 
 export type FilterConfig = TextFilterConfig | SelectFilterConfig | ForeignKeyFilterConfig | DateRangeFilterConfig;
+
+export interface InternalForeignKeyFilterConfig {
+  type: 'foreignKey';
+  sourceTable: string;
+  sourceField: string;
+  sourceValue: string | number;
+  targetForeignKey: string;
+}
+
+export type InternalFilterConfig = InternalForeignKeyFilterConfig;
