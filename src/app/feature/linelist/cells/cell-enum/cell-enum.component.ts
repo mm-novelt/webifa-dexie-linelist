@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
+import { BadgeVariant } from './cell-enum.models';
 
-export type BadgeVariant = 'info' | 'secondary' | 'default' | 'danger' | 'success' | 'warning';
+export type { BadgeVariant };
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   info: 'bg-brand-softer text-fg-brand-strong',

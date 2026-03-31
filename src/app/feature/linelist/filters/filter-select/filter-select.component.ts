@@ -1,10 +1,8 @@
 import { Component, inject, input, WritableSignal } from '@angular/core';
 import { DataRepository } from '../../../../repositories/data.repository';
+import { SelectOption } from './filter-select.models';
 
-export interface SelectOption {
-  label: string;
-  value: string;
-}
+export type { SelectOption };
 
 @Component({
   selector: 'app-filter-select',

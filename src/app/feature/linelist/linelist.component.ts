@@ -10,61 +10,12 @@ import { CellStringComponent } from './cells/cell-string/cell-string.component';
 import { CellDateComponent } from './cells/cell-date/cell-date.component';
 import { CellManyToOneComponent } from './cells/cell-many-to-one/cell-many-to-one.component';
 import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-many.component';
-import { BadgeVariant, CellEnumComponent } from './cells/cell-enum/cell-enum.component';
-import { FilterTextComponent, RelatedFieldSearch } from './filters/filter-text/filter-text.component';
-import { FilterSelectComponent, SelectOption } from './filters/filter-select/filter-select.component';
+import { CellEnumComponent } from './cells/cell-enum/cell-enum.component';
+import { FilterTextComponent } from './filters/filter-text/filter-text.component';
+import { FilterSelectComponent } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
 import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
-
-interface BaseColumn {
-  key: string;
-  label: string;
-  sortable?: boolean;
-}
-
-export interface TitleColumn extends BaseColumn { type: 'title'; }
-export interface StringColumn extends BaseColumn { type: 'string'; }
-export interface DateColumn extends BaseColumn { type: 'date'; format: string; }
-export interface RelationColumn extends BaseColumn { type: 'relation'; table: string; displayProperty: string; }
-export interface OneToManyColumn extends BaseColumn { type: 'oneToMany'; table: string; foreignKey: string; displayProperty: string; }
-export interface EnumColumn extends BaseColumn { type: 'enum'; variants?: Record<string, BadgeVariant>; containsVariants?: Record<string, BadgeVariant>; }
-
-export type ColumnConfig = TitleColumn | StringColumn | DateColumn | RelationColumn | OneToManyColumn | EnumColumn;
-
-export interface TextFilterConfig {
-  type: 'text';
-  key: string;
-  fields: string[];
-  relatedSearches?: RelatedFieldSearch[];
-  placeholder?: string;
-}
-
-export interface SelectFilterConfig {
-  type: 'select';
-  key: string;
-  field: string;
-  placeholder?: string;
-  options: SelectOption[];
-}
-
-export interface ForeignKeyFilterConfig {
-  type: 'foreignKey';
-  key: string;
-  table: string;
-  displayProperty: string;
-  foreignKey: string;
-  placeholder?: string;
-}
-
-export interface DateRangeFilterConfig {
-  type: 'dateRange';
-  key: string;
-  field: string;
-  numeric?: boolean;
-  placeholder?: string;
-}
-
-export type FilterConfig = TextFilterConfig | SelectFilterConfig | ForeignKeyFilterConfig | DateRangeFilterConfig;
+import { ColumnConfig, FilterConfig } from './linelist.models';
 
 @Component({
   selector: 'app-linelist',

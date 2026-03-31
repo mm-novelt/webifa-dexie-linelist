@@ -1,10 +1,8 @@
 import { Component, input, output } from '@angular/core';
 import { SortDirection } from '../../../repositories/data.repository';
+import { SortChangeEvent } from './table-column-header.models';
 
-export interface SortChangeEvent {
-  column: string;
-  direction: SortDirection;
-}
+export type { SortChangeEvent };
 
 @Component({
   selector: 'th[app-table-column-header]',

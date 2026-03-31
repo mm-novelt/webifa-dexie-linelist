@@ -1,9 +1,8 @@
 import { Component, inject, input, signal, WritableSignal } from '@angular/core';
 import { DataRepository } from '../../../../repositories/data.repository';
+import { DateExactFilter, DateRangeFilter, DateFilterValue } from './filter-date-range.models';
 
-export interface DateExactFilter { mode: 'exact'; value: string; }
-export interface DateRangeFilter { mode: 'range'; from: string; to: string; }
-export type DateFilterValue = DateExactFilter | DateRangeFilter;
+export type { DateExactFilter, DateRangeFilter, DateFilterValue };
 
 const YEAR_RE = /^\d{4}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

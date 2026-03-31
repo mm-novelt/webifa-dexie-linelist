@@ -1,11 +1,8 @@
 import { Component, inject, input, WritableSignal } from '@angular/core';
 import { DataRepository } from '../../../../repositories/data.repository';
+import { RelatedFieldSearch } from './filter-text.models';
 
-export interface RelatedFieldSearch {
-  table: string;
-  field: string;
-  foreignKey: string;
-}
+export type { RelatedFieldSearch };
 
 @Component({
   selector: 'app-filter-text',
