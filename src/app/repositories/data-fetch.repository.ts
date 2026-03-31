@@ -61,7 +61,8 @@ export class DataFetchRepository {
         if (multiEntry) {
           for (const [field, separator] of Object.entries(multiEntry)) {
             if (field in picked && typeof picked[field] === 'string') {
-              picked[field] = (picked[field] as string).split(separator);
+              const original = picked[field] as string;
+              picked[field] = [original, ...original.split(separator)];
             }
           }
         }

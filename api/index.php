@@ -211,6 +211,7 @@ class Kernel extends BaseKernel
           'adeq' => $adeq,
           'finalResult' => $finalResult,
           'areaId' => $this->makeAreaUlid($areaIndex),
+          'published' => $faker->numberBetween(1, 10) <= 9 ? 1 : 0,
           'createdAt' => $createdAt,
         ], $this->makeExtraFields($faker));
       }
@@ -368,7 +369,7 @@ class Kernel extends BaseKernel
       'app' => 'webifa',
       'version' => '1',
       'tables' => [
-        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'areaId_published', 'createdAt'],
+        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'published', 'createdAt', '[id+areaPublished+published]', '[areaPublished+published'],
         'areas' => ['id', 'name', 'published', 'createdAt'],
         'specimens' => ['id', '*bid', 'caseId', '*finalResult', 'createdAt'],
       ],
@@ -388,12 +389,12 @@ class Kernel extends BaseKernel
         'cases' => '/api/data/cases',
         'specimens' => '/api/data/specimens',
       ],
-      'indexedBy' => [
+      'indexToProcess' => [
         'cases' => [
           [
-            'localKey' => 'areaId',
-            'foreignTable' => 'areas',
-            'foreignProperties' => ['published' => 'areaId_published'],
+            '[id+areaPublished+published]' => [
+
+            ]
           ],
         ],
       ],
@@ -428,7 +429,16 @@ class Kernel extends BaseKernel
             ['type' => 'dateRange', 'key' => 'yearFilter', 'field' => 'year', 'numeric' => true, 'placeholder' => 'Year or range...'],
           ],
           'internalFilters' => [
-            ['field' => 'areaId_published', 'value' => 1],
+            [
+              'name' => 'Area published and case published',
+              'index' => '[areaPublished+published]',
+              'indexWithFilter' => '[id+areaPublished+published]',
+              'default' => true,
+              'value' => [
+                'areaPublished' => 1,
+                'published' => 1,
+              ]
+            ],
           ],
         ],
         'areas' => [
