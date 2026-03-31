@@ -19,6 +19,20 @@ const ForeignKeyFilterSchema = z.object({ type: z.literal('foreignKey'), key: z.
 const DateRangeFilterSchema = z.object({ type: z.literal('dateRange'), key: z.string(), field: z.string(), numeric: z.boolean().optional(), placeholder: z.string().optional() });
 const FilterConfigSchema = z.discriminatedUnion('type', [TextFilterSchema, SelectFilterSchema, ForeignKeyFilterSchema, DateRangeFilterSchema]);
 
+const InternalFilterSchema = z.object({ field: z.string(), value: z.union([z.string(), z.number()]) });
+
+const IndexedByEntrySchema = z.object({
+  localKey: z.string(),
+  foreignTable: z.string(),
+  foreignProperties: z.record(z.string(), z.string()),
+});
+
+const LinelistTableConfigSchema = z.object({
+  columns: z.array(ColumnConfigSchema).default([]),
+  filters: z.array(FilterConfigSchema).default([]),
+  internalFilters: z.array(InternalFilterSchema).default([]),
+});
+
 export const ConfigSchema = z.object({
   app: z.string(),
   version: z.string(),
@@ -26,8 +40,8 @@ export const ConfigSchema = z.object({
   fetch: z.record(z.string(), z.string()),
   searchEngine: z.record(z.string(), z.array(z.string())).default({}),
   multiEntry: z.record(z.string(), z.record(z.string(), z.string())).default({}),
-  columns: z.record(z.string(), z.array(ColumnConfigSchema)).default({}),
-  filters: z.record(z.string(), z.array(FilterConfigSchema)).default({}),
+  indexedBy: z.record(z.string(), z.array(IndexedByEntrySchema)).default({}),
+  linelist: z.record(z.string(), LinelistTableConfigSchema).default({}),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -35,3 +49,5 @@ export type ColumnConfig = z.infer<typeof ColumnConfigSchema>;
 export type SubColumnConfig = z.infer<typeof SubColumnSchema>;
 export type OneToManyColumn = z.infer<typeof OneToManyColumnSchema>;
 export type FilterConfig = z.infer<typeof FilterConfigSchema>;
+export type InternalFilter = z.infer<typeof InternalFilterSchema>;
+export type IndexedByEntry = z.infer<typeof IndexedByEntrySchema>;

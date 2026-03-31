@@ -67,6 +67,13 @@ export class GettingStartedComponent {
         }),
       );
 
+      for (const [tableName] of entries) {
+        const indexedBy = config.indexedBy[tableName];
+        if (indexedBy?.length) {
+          await this.dataFetchRepository.enrichIndexed(tableName, indexedBy);
+        }
+      }
+
       this.isFetching.set(false);
       this.isDone.set(true);
     });

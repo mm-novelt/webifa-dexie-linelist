@@ -40,13 +40,28 @@ export class DataRepository {
     orderColumn: string,
     orderDirection: SortDirection,
     filteredIds?: string[],
+    internalFilters?: Array<{ field: string; value: string | number }>,
   ): Promise<PaginatedResult> {
     const offset = (page - 1) * pageSize;
     const dataTable = this.db.instance.table(`${tableName}_data`);
     const indexedTable = this.db.instance.table(`${tableName}_indexed`);
 
-    if (filteredIds !== undefined) {
-      const allowedSet = new Set(filteredIds);
+    let effectiveFilteredIds = filteredIds;
+    if (internalFilters?.length) {
+      const internalIdSets = await Promise.all(
+        internalFilters.map(f => indexedTable.where(f.field).equals(f.value).primaryKeys() as Promise<string[]>),
+      );
+      const internalIds = internalIdSets.reduce((acc, ids) => {
+        const lookup = new Set(ids);
+        return acc.filter(id => lookup.has(id));
+      });
+      effectiveFilteredIds = filteredIds !== undefined
+        ? filteredIds.filter(id => new Set(internalIds).has(id))
+        : internalIds;
+    }
+
+    if (effectiveFilteredIds !== undefined) {
+      const allowedSet = new Set(effectiveFilteredIds);
       let collection = indexedTable.orderBy(orderColumn);
       if (orderDirection === 'DESC') collection = collection.reverse();
       const allOrderedIds = await collection.primaryKeys() as string[];

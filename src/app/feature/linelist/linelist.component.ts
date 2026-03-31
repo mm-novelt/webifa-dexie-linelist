@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, signal, WritableSignal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, WritableSignal } from '@angular/core';
 import { DataRepository, SortDirection } from '../../repositories/data.repository';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../header/header.component';
@@ -42,15 +42,16 @@ import { ConfigService } from '../../services/config.service';
     FilterDateRangeComponent,
   ],
 })
-export class LinelistComponent implements OnInit {
+export class LinelistComponent {
 
   table = input.required<string>();
 
   private dataRepository = inject(DataRepository);
   private configService = inject(ConfigService);
 
-  readonly columns = computed<ColumnConfig[]>(() => this.configService.query.data()?.columns[this.table()] ?? []);
-  readonly filters = computed<FilterConfig[]>(() => this.configService.query.data()?.filters[this.table()] ?? []);
+  readonly columns = computed<ColumnConfig[]>(() => this.configService.query.data()?.linelist[this.table()]?.columns ?? []);
+  readonly filters = computed<FilterConfig[]>(() => this.configService.query.data()?.linelist[this.table()]?.filters ?? []);
+  readonly internalFilters = computed(() => this.configService.query.data()?.linelist[this.table()]?.internalFilters ?? []);
 
   readonly pageSize = 10;
 
@@ -80,8 +81,13 @@ export class LinelistComponent implements OnInit {
     return this.loadData();
   };
 
-  async ngOnInit(): Promise<void> {
-    await this.loadData();
+  constructor() {
+    effect(async () => {
+      const config = this.configService.query.data();
+      this.table(); // track table input
+      if (!config) return;
+      await this.loadData();
+    });
   }
 
   async onSortChange(event: SortChangeEvent): Promise<void> {
@@ -131,6 +137,7 @@ export class LinelistComponent implements OnInit {
       this.orderColumn(),
       this.orderDirection(),
       this.filteredIds() ?? undefined,
+      this.internalFilters(),
     );
     this.rows.set(result.data);
     this.total.set(result.total);

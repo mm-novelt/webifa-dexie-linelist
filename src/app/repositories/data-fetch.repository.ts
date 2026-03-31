@@ -94,6 +94,42 @@ export class DataFetchRepository {
       });
     }
   }
+
+  async enrichIndexed(
+    tableName: string,
+    indexedBy: Array<{ localKey: string; foreignTable: string; foreignProperties: Record<string, string> }>,
+  ): Promise<void> {
+    const indexedTable = this.db.instance.table(`${tableName}_indexed`);
+    const allRecords = await indexedTable.toArray() as Record<string, unknown>[];
+
+    const lookups: Array<{
+      localKey: string;
+      foreignProperties: Record<string, string>;
+      map: Map<unknown, Record<string, unknown>>;
+    }> = [];
+
+    for (const entry of indexedBy) {
+      const foreignRecords = await this.db.instance.table(`${entry.foreignTable}_indexed`).toArray() as Record<string, unknown>[];
+      const map = new Map<unknown, Record<string, unknown>>();
+      for (const fr of foreignRecords) map.set(fr['id'], fr);
+      lookups.push({ localKey: entry.localKey, foreignProperties: entry.foreignProperties, map });
+    }
+
+    const enriched = allRecords.map(record => {
+      const result = { ...record };
+      for (const { localKey, foreignProperties, map } of lookups) {
+        const foreignRecord = map.get(record[localKey]);
+        if (foreignRecord) {
+          for (const [foreignProp, localProp] of Object.entries(foreignProperties)) {
+            result[localProp] = foreignRecord[foreignProp];
+          }
+        }
+      }
+      return result;
+    });
+
+    await indexedTable.bulkPut(enriched);
+  }
 }
 
 function extractIndexedFieldNames(indexes: string[]): string[] {
