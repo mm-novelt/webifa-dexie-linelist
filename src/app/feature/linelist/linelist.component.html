@@ -116,7 +116,7 @@
                   </td>
                 }
                 @case ('enum') {
-                  <td app-cell-enum [value]="cellValue(row, col.key)" [variants]="$any(col).variants ?? {}" [containsVariants]="$any(col).containsVariants ?? {}"></td>
+                  <td app-cell-enum [value]="cellValue(row, col.key)" [variants]="$any(col).variants ?? {}" [containsVariants]="$any(col).containsVariants ?? {}" [multiple]="$any(col).multiple ?? false" [separator]="$any(col).separator ?? ', '"></td>
                 }
               }
             }

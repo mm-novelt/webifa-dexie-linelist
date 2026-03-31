@@ -26,6 +26,10 @@ const EnumColumnSchema = z.object({
   key: z.string(),
   label: z.string(),
   sortable: z.boolean().optional(),
+  /** When true the stored value is an array; each item renders as its own badge. */
+  multiple: z.boolean().optional(),
+  /** String placed between badges when `multiple` is true. Defaults to `', '`. */
+  separator: z.string().optional(),
   variants: z.record(z.string(), BadgeVariantSchema).optional(),
   containsVariants: z.record(z.string(), BadgeVariantSchema).optional(),
 });

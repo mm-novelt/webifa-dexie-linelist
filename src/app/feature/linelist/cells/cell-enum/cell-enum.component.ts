@@ -16,28 +16,49 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   selector: 'td[app-cell-enum]',
   standalone: true,
   template: `
-    <span [class]="badgeClass() + ' text-xs font-medium px-1.5 py-0.5 rounded'">
-      {{ displayValue() }}
-    </span>
+    @if (multiple()) {
+      @for (item of asArray(); track $index; let last = $last) {
+        <span [class]="itemBadgeClass(item) + ' text-xs font-medium px-1.5 py-0.5 rounded'">{{ item }}</span>
+        @if (!last) {<span class="text-body opacity-40 text-xs mx-0.5">{{ separator() }}</span>}
+      }
+    } @else {
+      <span [class]="singleBadgeClass() + ' text-xs font-medium px-1.5 py-0.5 rounded'">
+        {{ singleValue() }}
+      </span>
+    }
   `,
   host: { class: 'px-4 py-2' },
 })
 export class CellEnumComponent {
-  value = input.required<string>();
+  value = input.required<string | string[]>();
   variants = input<Record<string, BadgeVariant>>({});
   containsVariants = input<Record<string, BadgeVariant>>({});
+  multiple = input<boolean>(false);
+  separator = input<string>(', ');
 
-  displayValue = computed(() => this.value() ?? '');
+  asArray = computed(() => {
+    const v = this.value();
+    return Array.isArray(v) ? v : [v];
+  });
 
-  badgeClass = computed(() => {
-    const val = this.displayValue();
-    if (val in this.variants()) {
-      return VARIANT_CLASSES[this.variants()[val]];
+  singleValue = computed(() => {
+    const v = this.value();
+    return Array.isArray(v) ? v.join(this.separator()) : (v ?? '');
+  });
+
+  itemBadgeClass(item: string): string {
+    if (item in this.variants()) return VARIANT_CLASSES[this.variants()[item]];
+    for (const [sub, variant] of Object.entries(this.containsVariants())) {
+      if (item.includes(sub)) return VARIANT_CLASSES[variant];
     }
-    for (const [substring, variant] of Object.entries(this.containsVariants())) {
-      if (val.includes(substring)) {
-        return VARIANT_CLASSES[variant];
-      }
+    return VARIANT_CLASSES['default'];
+  }
+
+  singleBadgeClass = computed(() => {
+    const val = this.singleValue();
+    if (val in this.variants()) return VARIANT_CLASSES[this.variants()[val]];
+    for (const [sub, variant] of Object.entries(this.containsVariants())) {
+      if (val.includes(sub)) return VARIANT_CLASSES[variant];
     }
     return VARIANT_CLASSES['default'];
   });
