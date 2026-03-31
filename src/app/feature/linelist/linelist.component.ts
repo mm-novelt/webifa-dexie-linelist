@@ -114,8 +114,8 @@ export class LinelistComponent implements OnInit {
     await this.loadData();
   }
 
-  cellValue(row: IdbObject, key: string): unknown {
-    return (row as Record<string, unknown>)[key];
+  cellValue(row: IdbObject, key: string): string {
+    return row[key] as string;
   }
 
   private async loadData(): Promise<void> {

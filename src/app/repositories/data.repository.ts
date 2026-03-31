@@ -17,16 +17,16 @@ export interface PaginatedResult {
 export class DataRepository {
   private db = inject(DbService);
 
-  async getById(tableName: string, id: unknown): Promise<IdbObject | undefined> {
+  async getById(tableName: string, id: string): Promise<IdbObject | undefined> {
     const table = this.db.instance.table(`${tableName}_data`);
-    const record = await table.get(id as string);
+    const record = await table.get(id);
     if (!record) return undefined;
     return IdbObjectSchema.parse(record);
   }
 
-  async getByForeignKey(tableName: string, foreignKey: string, value: unknown): Promise<IdbObject[]> {
+  async getByForeignKey(tableName: string, foreignKey: string, value: IndexableType): Promise<IdbObject[]> {
     const indexedTable = this.db.instance.table(`${tableName}_indexed`);
-    const ids = await indexedTable.where(foreignKey).equals(value as IndexableType).primaryKeys();
+    const ids = await indexedTable.where(foreignKey).equals(value).primaryKeys();
     if (ids.length === 0) return [];
     const dataTable = this.db.instance.table(`${tableName}_data`);
     const records = await dataTable.where('id').anyOf(ids as string[]).toArray();
@@ -80,7 +80,7 @@ export class DataRepository {
     );
     const rows = (orderedIds as string[])
       .map(id => recordMap.get(id))
-      .filter((r): r is Record<string, unknown> => r !== undefined);
+      .filter((r): r is IdbObject => r !== undefined);
 
     return {
       data: rows.map(row => IdbObjectSchema.parse(row)),

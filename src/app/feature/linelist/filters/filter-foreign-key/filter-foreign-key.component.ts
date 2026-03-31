@@ -105,6 +105,6 @@ export class FilterForeignKeyComponent {
   }
 
   displayValue(item: IdbObject): string {
-    return String((item as Record<string, unknown>)[this.displayProperty()] ?? '');
+    return String(item[this.displayProperty()] ?? '');
   }
 }

@@ -7,5 +7,5 @@ import { Component, input } from '@angular/core';
   host: { class: 'px-4 py-2' },
 })
 export class CellStringComponent {
-  value = input.required<unknown>();
+  value = input.required<string>();
 }

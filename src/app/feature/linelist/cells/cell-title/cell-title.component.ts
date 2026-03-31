@@ -10,5 +10,5 @@ import { Component, input } from '@angular/core';
   },
 })
 export class CellTitleComponent {
-  value = input.required<unknown>();
+  value = input.required<string>();
 }

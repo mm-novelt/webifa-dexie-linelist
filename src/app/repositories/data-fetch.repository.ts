@@ -1,4 +1,5 @@
 import { inject, Injectable, WritableSignal } from '@angular/core';
+import { IndexableType } from 'dexie';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { DbService } from '../services/db.service';
 import { SearchEngineService } from '../services/search-engine.service';
@@ -71,7 +72,7 @@ export class DataFetchRepository {
         return picked;
       });
 
-      const writes: Promise<unknown>[] = [
+      const writes: Promise<IndexableType | void>[] = [
         dataTable.bulkPut(response.data),
         indexedTable.bulkPut(indexedRecords),
       ];

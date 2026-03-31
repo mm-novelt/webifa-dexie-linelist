@@ -23,11 +23,11 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   host: { class: 'px-4 py-2' },
 })
 export class CellEnumComponent {
-  value = input.required<unknown>();
+  value = input.required<string>();
   variants = input<Record<string, BadgeVariant>>({});
   containsVariants = input<Record<string, BadgeVariant>>({});
 
-  displayValue = computed(() => String(this.value() ?? ''));
+  displayValue = computed(() => this.value() ?? '');
 
   badgeClass = computed(() => {
     const val = this.displayValue();

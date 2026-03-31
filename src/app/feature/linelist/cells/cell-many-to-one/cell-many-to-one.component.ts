@@ -20,7 +20,7 @@ import { DataRepository } from '../../../../repositories/data.repository';
   host: { class: 'px-4 py-2' },
 })
 export class CellManyToOneComponent {
-  value = input.required<unknown>();
+  value = input.required<string>();
   table = input.required<string>();
   displayProperty = input.required<string>();
 
@@ -35,11 +35,11 @@ export class CellManyToOneComponent {
     });
   }
 
-  private async load(id: unknown, tableName: string, property: string): Promise<void> {
+  private async load(id: string, tableName: string, property: string): Promise<void> {
     this.loading.set(true);
     const record = await this.dataRepository.getById(tableName, id);
     if (record) {
-      this.displayValue.set(String((record as Record<string, unknown>)[property] ?? '—'));
+      this.displayValue.set(String(record[property] ?? '—'));
     } else {
       this.displayValue.set(null);
     }
