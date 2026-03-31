@@ -96,7 +96,7 @@ export class LinelistComponent implements OnInit {
   readonly columns: ColumnConfig[] = [
     { key: 'bid', label: 'Case BID', sortable: true, type: 'title' },
     { key: 'patientName', label: 'Patient name', sortable: true, type: 'string' },
-    { key: 'areaId', label: 'Area', sortable: true, type: 'relation', table: 'areas', displayProperty: 'name' },
+    { key: 'areaId', label: 'Area', type: 'relation', table: 'areas', displayProperty: 'name' },
     { key: 'adeq', label: 'Adeq', sortable: false, type: 'enum', variants: { ADEQ: 'success', INADEQ: 'danger' } },
     { key: 'finalResult', label: 'Final result', sortable: false, type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
     { key: 'specimens', label: 'Specimens', sortable: false, type: 'oneToMany', table: 'specimens', foreignKey: 'caseId', displayProperty: 'bid' },
