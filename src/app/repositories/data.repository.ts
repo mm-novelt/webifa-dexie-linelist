@@ -110,10 +110,24 @@ export class DataRepository {
     return [...union];
   }
 
-  async searchByExactValue(tableName: string, field: string, value: string): Promise<string[]> {
+  async searchByExactValue(tableName: string, field: string, value: IndexableType): Promise<string[]> {
     const table = this.db.instance.table(`${tableName}_indexed`);
     const keys = await table.where(field).equals(value).primaryKeys();
     return keys as string[];
+  }
+
+  async searchByRange(tableName: string, field: string, lower: IndexableType, upper: IndexableType): Promise<string[]> {
+    const table = this.db.instance.table(`${tableName}_indexed`);
+    const keys = await table.where(field).between(lower, upper, true, true).primaryKeys();
+    return keys as string[];
+  }
+
+  async searchByTextAsRecords(tableName: string, fields: string[], term: string): Promise<IdbObject[]> {
+    const ids = await this.searchByText(tableName, fields, term);
+    if (ids.length === 0) return [];
+    const dataTable = this.db.instance.table(`${tableName}_data`);
+    const records = await dataTable.where('id').anyOf(ids).toArray();
+    return records.map(r => IdbObjectSchema.parse(r));
   }
 
   private getIndexedFields(table: Table, fields: string[]): string[] {

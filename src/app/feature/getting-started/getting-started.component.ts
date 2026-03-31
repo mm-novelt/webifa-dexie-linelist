@@ -56,21 +56,13 @@ export class GettingStartedComponent {
       this.tableProgressSignals.set(progressSignals);
       this.isFetching.set(true);
 
-      const hasSearchConfig = Object.keys(config.searchEngine).length > 0;
-      const alreadyIndexed = hasSearchConfig ? await this.searchEngine.isIndexed() : true;
-
-      if (hasSearchConfig && !alreadyIndexed) {
-        await this.searchEngine.clearIndex();
-      }
-
       await Promise.all(
         entries.map(async ([tableName, url], i) => {
           const count = await this.db.instance.table(`${tableName}_data`).count();
           if (count > 0) {
             progressSignals[i].set({ tableName, recordsLoaded: count, total: count, percent: 100, done: true });
           } else {
-            const searchProperties = (hasSearchConfig && !alreadyIndexed) ? config.searchEngine[tableName] : undefined;
-            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], searchProperties);
+            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], undefined, config.multiEntry[tableName]);
           }
         }),
       );

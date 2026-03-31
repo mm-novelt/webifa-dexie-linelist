@@ -37,6 +37,7 @@ export class DataFetchRepository {
     indexDefinitions: string[],
     progress: WritableSignal<TableFetchProgress>,
     searchProperties?: string[],
+    multiEntry?: Record<string, string>,
   ): Promise<void> {
     const indexedFields = extractIndexedFieldNames(indexDefinitions);
     let page = 1;
@@ -58,7 +59,17 @@ export class DataFetchRepository {
         gcTime: Infinity,
       });
 
-      const indexedRecords = response.data.map(record => pick(record, indexedFields));
+      const indexedRecords = response.data.map(record => {
+        const picked = pick(record, indexedFields);
+        if (multiEntry) {
+          for (const [field, separator] of Object.entries(multiEntry)) {
+            if (field in picked && typeof picked[field] === 'string') {
+              picked[field] = (picked[field] as string).split(separator);
+            }
+          }
+        }
+        return picked;
+      });
 
       const writes: Promise<unknown>[] = [
         dataTable.bulkPut(response.data),

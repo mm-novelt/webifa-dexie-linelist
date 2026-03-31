@@ -367,9 +367,20 @@ class Kernel extends BaseKernel
       'app' => 'webifa',
       'version' => '1',
       'tables' => [
-        'cases' => ['id', 'bid', 'patientName', 'year', 'adeq', 'finalResult', 'areaId', 'createdAt'],
+        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'createdAt'],
         'areas' => ['id', 'name', 'createdAt'],
-        'specimens' => ['id', 'bid', 'caseId', 'finalResult', 'createdAt'],
+        'specimens' => ['id', '*bid', 'caseId', '*finalResult', 'createdAt'],
+      ],
+      'multiEntry' => [
+        'cases' => [
+          'finalResult' => ', ',
+          'bid' => '/',
+          'patientName' => ' ',
+        ],
+        'specimens' => [
+          'finalResult' => ', ',
+          'bid' => '/',
+        ],
       ],
       'fetch' => [
         'areas' => '/api/data/areas',

@@ -13,6 +13,8 @@ import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-man
 import { BadgeVariant, CellEnumComponent } from './cells/cell-enum/cell-enum.component';
 import { FilterTextComponent } from './filters/filter-text/filter-text.component';
 import { FilterSelectComponent, SelectOption } from './filters/filter-select/filter-select.component';
+import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
+import { DateFilterValue, FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
 
 interface BaseColumn {
   key: string;
@@ -44,7 +46,24 @@ export interface SelectFilterConfig {
   options: SelectOption[];
 }
 
-export type FilterConfig = TextFilterConfig | SelectFilterConfig;
+export interface ForeignKeyFilterConfig {
+  type: 'foreignKey';
+  key: string;
+  table: string;
+  displayProperty: string;
+  foreignKey: string;
+  placeholder?: string;
+}
+
+export interface DateRangeFilterConfig {
+  type: 'dateRange';
+  key: string;
+  field: string;
+  numeric?: boolean;
+  placeholder?: string;
+}
+
+export type FilterConfig = TextFilterConfig | SelectFilterConfig | ForeignKeyFilterConfig | DateRangeFilterConfig;
 
 @Component({
   selector: 'app-linelist',
@@ -64,6 +83,8 @@ export type FilterConfig = TextFilterConfig | SelectFilterConfig;
     CellEnumComponent,
     FilterTextComponent,
     FilterSelectComponent,
+    FilterForeignKeyComponent,
+    FilterDateRangeComponent,
   ],
 })
 export class LinelistComponent implements OnInit {
@@ -79,12 +100,15 @@ export class LinelistComponent implements OnInit {
     { key: 'adeq', label: 'Adeq', sortable: false, type: 'enum', variants: { ADEQ: 'success', INADEQ: 'danger' } },
     { key: 'finalResult', label: 'Final result', sortable: false, type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
     { key: 'specimens', label: 'Specimens', sortable: false, type: 'oneToMany', table: 'specimens', foreignKey: 'caseId', displayProperty: 'bid' },
+    { key: 'year', label: 'Year', sortable: true, type: 'string' },
     { key: 'createdAt', label: 'Created At', sortable: true, type: 'date', format: 'dd/MM/yyyy' },
   ];
 
   readonly filters: FilterConfig[] = [
     { type: 'text', key: 'search', fields: ['bid', 'patientName', 'finalResult'], placeholder: 'Search...' },
     { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'Adeq — All', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
+    { type: 'foreignKey', key: 'areaFilter', table: 'areas', displayProperty: 'name', foreignKey: 'areaId', placeholder: 'Area...' },
+    { type: 'dateRange', key: 'yearFilter', field: 'year', numeric: true, placeholder: 'Year or range...' },
   ];
 
   readonly pageSize = 10;
@@ -140,12 +164,42 @@ export class LinelistComponent implements OnInit {
     await this.loadData();
   }
 
+  async onForeignKeyFilter(filter: ForeignKeyFilterConfig, id: string): Promise<void> {
+    const map = new Map(this.filterResults());
+    if (!id) {
+      map.delete(filter.key);
+    } else {
+      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.foreignKey, id);
+      map.set(filter.key, ids);
+    }
+    this.filterResults.set(map);
+    this.currentPage.set(1);
+    await this.loadData();
+  }
+
   async onSelectFilter(filter: SelectFilterConfig, value: string): Promise<void> {
     const map = new Map(this.filterResults());
     if (!value) {
       map.delete(filter.key);
     } else {
       const ids = await this.dataRepository.searchByExactValue(this.table(), filter.field, value);
+      map.set(filter.key, ids);
+    }
+    this.filterResults.set(map);
+    this.currentPage.set(1);
+    await this.loadData();
+  }
+
+  async onDateRangeFilter(filter: DateRangeFilterConfig, value: DateFilterValue | null): Promise<void> {
+    const map = new Map(this.filterResults());
+    const cast = (v: string) => filter.numeric ? Number(v) : v;
+    if (!value) {
+      map.delete(filter.key);
+    } else if (value.mode === 'exact') {
+      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.field, cast(value.value));
+      map.set(filter.key, ids);
+    } else {
+      const ids = await this.dataRepository.searchByRange(this.table(), filter.field, cast(value.from), cast(value.to));
       map.set(filter.key, ids);
     }
     this.filterResults.set(map);
