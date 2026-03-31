@@ -66,7 +66,7 @@ export class LinelistComponent implements OnInit {
       ],
       placeholder: 'Search...',
     },
-    { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'Adeq — All', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
+    { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'All Adeq result', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
     { type: 'foreignKey', key: 'areaFilter', table: 'areas', displayProperty: 'name', foreignKey: 'areaId', placeholder: 'Area...' },
     { type: 'dateRange', key: 'yearFilter', field: 'year', numeric: true, placeholder: 'Year or range...' },
   ];
