@@ -98,7 +98,7 @@ class Kernel extends BaseKernel
         $areas[] = [
           'id' => $this->makeAreaUlid($i),
           'name' => $name,
-          'createdAt' => $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s')
+          'createdAt' => $faker->dateTimeBetween("{$year}-01-01", "{$year}-12-31")->format('Y-m-d H:i:s'),
         ];
       }
     }
@@ -378,13 +378,13 @@ class Kernel extends BaseKernel
       ],
       'searchEngine' => [
         'cases' => [
-          'cases.area.name',
           'cases.bid',
           'cases.year',
           'cases.finalResult',
           'cases.patientName',
           'cases.adeq',
         ],
+        'areas' => ['areas.name'],
       ],
     ]);
   }
