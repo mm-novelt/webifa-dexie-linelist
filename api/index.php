@@ -397,16 +397,6 @@ class Kernel extends BaseKernel
           ],
         ],
       ],
-      'searchEngine' => [
-        'cases' => [
-          'cases.bid',
-          'cases.year',
-          'cases.finalResult',
-          'cases.patientName',
-          'cases.adeq',
-        ],
-        'areas' => ['areas.name'],
-      ],
       'linelist' => [
         'cases' => [
           'columns' => [

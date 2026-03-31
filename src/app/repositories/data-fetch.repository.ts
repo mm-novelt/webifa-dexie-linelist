@@ -1,5 +1,4 @@
 import { inject, Injectable, WritableSignal } from '@angular/core';
-import { IndexableType } from 'dexie';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { DbService } from '../services/db.service';
 
