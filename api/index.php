@@ -369,7 +369,7 @@ class Kernel extends BaseKernel
       'app' => 'webifa',
       'version' => '1',
       'tables' => [
-        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'published', 'createdAt', '[id+areaPublished+published]', '[areaPublished+published'],
+        'cases' => ['id', '*bid', '*patientName', 'year', 'adeq', '*finalResult', 'areaId', 'published', 'createdAt', '[id+areaPublished+published]', '[areaPublished+published]'],
         'areas' => ['id', 'name', 'published', 'createdAt'],
         'specimens' => ['id', '*bid', 'caseId', '*finalResult', 'createdAt'],
       ],
@@ -391,10 +391,12 @@ class Kernel extends BaseKernel
       ],
       'indexToProcess' => [
         'cases' => [
-          [
-            '[id+areaPublished+published]' => [
-
-            ]
+          'foreignFields' => [
+            'areaPublished' => [
+              'foreignTable' => 'areas',
+              'foreignKey'   => 'areaId',
+              'property'     => 'published',
+            ],
           ],
         ],
       ],
@@ -416,6 +418,7 @@ class Kernel extends BaseKernel
               ],
             ],
             ['type' => 'string', 'key' => 'year', 'label' => 'Year', 'sortable' => true],
+            ['type' => 'enum', 'key' => 'published', 'label' => 'Status', 'sortable' => false, 'variants' => [1 => 'success', 0 => 'danger']],
             ['type' => 'date', 'key' => 'createdAt', 'label' => 'Created At', 'sortable' => true, 'format' => 'dd/MM/yyyy'],
           ],
           'filters' => [
@@ -437,6 +440,16 @@ class Kernel extends BaseKernel
               'value' => [
                 'areaPublished' => 1,
                 'published' => 1,
+              ]
+            ],
+            [
+              'name' => 'Area published and case unpublished',
+              'index' => '[areaPublished+published]',
+              'indexWithFilter' => '[id+areaPublished+published]',
+              'default' => true,
+              'value' => [
+                'areaPublished' => 1,
+                'published' => 0,
               ]
             ],
           ],

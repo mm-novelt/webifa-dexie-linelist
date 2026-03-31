@@ -19,12 +19,22 @@ const ForeignKeyFilterSchema = z.object({ type: z.literal('foreignKey'), key: z.
 const DateRangeFilterSchema = z.object({ type: z.literal('dateRange'), key: z.string(), field: z.string(), numeric: z.boolean().optional(), placeholder: z.string().optional() });
 const FilterConfigSchema = z.discriminatedUnion('type', [TextFilterSchema, SelectFilterSchema, ForeignKeyFilterSchema, DateRangeFilterSchema]);
 
-const InternalFilterSchema = z.object({ field: z.string(), value: z.union([z.string(), z.number()]) });
+const InternalFilterSchema = z.object({
+  name: z.string(),
+  index: z.string(),
+  indexWithFilter: z.string(),
+  default: z.boolean().optional(),
+  value: z.record(z.string(), z.union([z.string(), z.number()])),
+});
 
-const IndexedByEntrySchema = z.object({
-  localKey: z.string(),
+const ForeignFieldConfigSchema = z.object({
   foreignTable: z.string(),
-  foreignProperties: z.record(z.string(), z.string()),
+  foreignKey: z.string(),
+  property: z.string(),
+});
+
+const IndexToProcessEntrySchema = z.object({
+  foreignFields: z.record(z.string(), ForeignFieldConfigSchema).default({}),
 });
 
 const LinelistTableConfigSchema = z.object({
@@ -39,7 +49,7 @@ export const ConfigSchema = z.object({
   tables: z.record(z.string(), z.array(z.string())),
   fetch: z.record(z.string(), z.string()),
   multiEntry: z.record(z.string(), z.record(z.string(), z.string())).default({}),
-  indexedBy: z.record(z.string(), z.array(IndexedByEntrySchema)).default({}),
+  indexToProcess: z.record(z.string(), IndexToProcessEntrySchema).default({}),
   linelist: z.record(z.string(), LinelistTableConfigSchema).default({}),
 });
 
@@ -49,4 +59,5 @@ export type SubColumnConfig = z.infer<typeof SubColumnSchema>;
 export type OneToManyColumn = z.infer<typeof OneToManyColumnSchema>;
 export type FilterConfig = z.infer<typeof FilterConfigSchema>;
 export type InternalFilter = z.infer<typeof InternalFilterSchema>;
-export type IndexedByEntry = z.infer<typeof IndexedByEntrySchema>;
+export type ForeignFieldConfig = z.infer<typeof ForeignFieldConfigSchema>;
+export type IndexToProcessEntry = z.infer<typeof IndexToProcessEntrySchema>;

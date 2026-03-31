@@ -60,15 +60,16 @@ export class GettingStartedComponent {
           if (count > 0) {
             progressSignals[i].set({ tableName, recordsLoaded: count, total: count, percent: 100, done: true });
           } else {
-            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], config.multiEntry[tableName]);
+            const computedFields = Object.keys(config.indexToProcess[tableName]?.foreignFields ?? {});
+            await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i], config.multiEntry[tableName], computedFields);
           }
         }),
       );
 
       for (const [i, [tableName]] of entries.entries()) {
-        const indexedBy = config.indexedBy[tableName];
-        if (indexedBy?.length) {
-          await this.dataFetchRepository.enrichIndexed(tableName, indexedBy, progressSignals[i]);
+        const indexToProcess = config.indexToProcess[tableName];
+        if (indexToProcess && Object.keys(indexToProcess.foreignFields).length > 0) {
+          await this.dataFetchRepository.enrichIndexed(tableName, indexToProcess.foreignFields, progressSignals[i]);
         }
       }
 

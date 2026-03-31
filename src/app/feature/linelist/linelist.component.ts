@@ -16,7 +16,7 @@ import { FilterTextComponent } from './filters/filter-text/filter-text.component
 import { FilterSelectComponent } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
 import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
-import { ColumnConfig, FilterConfig, OneToManyColumn } from './linelist.models';
+import { ColumnConfig, FilterConfig, InternalFilter, OneToManyColumn } from './linelist.models';
 import { ConfigService } from '../../services/config.service';
 
 @Component({
@@ -76,6 +76,9 @@ export class LinelistComponent {
     });
   });
 
+  selectedInternalFilter = signal<InternalFilter | null>(null);
+  private internalFilterInitialized = false;
+
   readonly reloadFn: () => Promise<void> = () => {
     this.currentPage.set(1);
     return this.loadData();
@@ -86,6 +89,11 @@ export class LinelistComponent {
       const config = this.configService.query.data();
       this.table(); // track table input
       if (!config) return;
+      if (!this.internalFilterInitialized) {
+        const def = this.internalFilters().find(f => f.default) ?? null;
+        this.selectedInternalFilter.set(def);
+        this.internalFilterInitialized = true;
+      }
       await this.loadData();
     });
   }
@@ -100,6 +108,13 @@ export class LinelistComponent {
   async onPageChange(page: number): Promise<void> {
     this.currentPage.set(page);
     await this.loadData();
+  }
+
+  onInternalFilterChange(name: string): void {
+    const f = name ? this.internalFilters().find(f => f.name === name) ?? null : null;
+    this.selectedInternalFilter.set(f);
+    this.currentPage.set(1);
+    this.loadData();
   }
 
   cellValue(row: IdbObject, key: string): string {
@@ -137,7 +152,7 @@ export class LinelistComponent {
       this.orderColumn(),
       this.orderDirection(),
       this.filteredIds() ?? undefined,
-      this.internalFilters(),
+      this.selectedInternalFilter(),
     );
     this.rows.set(result.data);
     this.total.set(result.total);

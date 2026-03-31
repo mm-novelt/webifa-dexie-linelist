@@ -50,6 +50,17 @@
           }
         }
       </div>
+      @if (internalFilters().length > 0) {
+        <select
+          class="text-sm border border-default rounded-base px-3 py-1.5 bg-neutral-primary-soft text-body focus:outline-none"
+          [value]="selectedInternalFilter()?.name ?? ''"
+          (change)="onInternalFilterChange($any($event.target).value)">
+          <option value="">All records</option>
+          @for (f of internalFilters(); track f.name) {
+            <option [value]="f.name">{{ f.name }}</option>
+          }
+        </select>
+      }
     </div>
     <table class="w-full text-sm text-left rtl:text-right text-body">
       <thead class="text-sm text-body bg-neutral-secondary-medium border-b border-t border-default-medium">

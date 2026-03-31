@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { IndexableType, Table } from 'dexie';
 import { DbService } from '../services/db.service';
 import { IdbObject, IdbObjectSchema } from '../models/idb-object.model';
+import { InternalFilter } from '../models/config.model';
 
 export type SortDirection = 'ASC' | 'DESC';
 
@@ -40,24 +41,30 @@ export class DataRepository {
     orderColumn: string,
     orderDirection: SortDirection,
     filteredIds?: string[],
-    internalFilters?: Array<{ field: string; value: string | number }>,
+    selectedInternalFilter?: InternalFilter | null,
   ): Promise<PaginatedResult> {
     const offset = (page - 1) * pageSize;
     const dataTable = this.db.instance.table(`${tableName}_data`);
     const indexedTable = this.db.instance.table(`${tableName}_indexed`);
 
-    let effectiveFilteredIds = filteredIds;
-    if (internalFilters?.length) {
-      const internalIdSets = await Promise.all(
-        internalFilters.map(f => indexedTable.where(f.field).equals(f.value).primaryKeys() as Promise<string[]>),
-      );
-      const internalIds = internalIdSets.reduce((acc, ids) => {
-        const lookup = new Set(ids);
-        return acc.filter(id => lookup.has(id));
-      });
-      effectiveFilteredIds = filteredIds !== undefined
-        ? filteredIds.filter(id => new Set(internalIds).has(id))
-        : internalIds;
+    let effectiveFilteredIds: string[] | undefined = undefined;
+
+    if (selectedInternalFilter) {
+      const filterVals = compoundValues(selectedInternalFilter.index, selectedInternalFilter.value);
+      if (filteredIds?.length) {
+        const compounds = filteredIds.map(id => [id, ...filterVals]);
+        effectiveFilteredIds = await indexedTable
+          .where(selectedInternalFilter.indexWithFilter)
+          .anyOf(compounds)
+          .primaryKeys() as string[];
+      } else {
+        effectiveFilteredIds = await indexedTable
+          .where(selectedInternalFilter.index)
+          .equals(filterVals)
+          .primaryKeys() as string[];
+      }
+    } else if (filteredIds) {
+      effectiveFilteredIds = filteredIds;
     }
 
     if (effectiveFilteredIds !== undefined) {
@@ -164,4 +171,8 @@ export class DataRepository {
     ]);
     return fields.filter(f => indexed.has(f));
   }
+}
+
+function compoundValues(index: string, value: Record<string, string | number>): (string | number)[] {
+  return index.slice(1, -1).split('+').map(f => value[f]);
 }

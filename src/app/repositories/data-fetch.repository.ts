@@ -1,6 +1,7 @@
 import { inject, Injectable, WritableSignal } from '@angular/core';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { DbService } from '../services/db.service';
+import { ForeignFieldConfig } from '../models/config.model';
 
 interface PageMeta {
   total: number;
@@ -29,12 +30,14 @@ export interface TableFetchProgress {
 export class DataFetchRepository {
   private queryClient = inject(QueryClient);
   private db = inject(DbService);
+
   async fetchAndStore(
     tableName: string,
     url: string,
     indexDefinitions: string[],
     progress: WritableSignal<TableFetchProgress>,
     multiEntry?: Record<string, string>,
+    computedFields?: string[],
   ): Promise<void> {
     const indexedFields = extractIndexedFieldNames(indexDefinitions);
     let page = 1;
@@ -58,6 +61,11 @@ export class DataFetchRepository {
 
       const indexedRecords = response.data.map(record => {
         const picked = pick(record, indexedFields);
+        if (computedFields) {
+          for (const field of computedFields) {
+            if (!(field in picked)) picked[field] = null;
+          }
+        }
         if (multiEntry) {
           for (const [field, separator] of Object.entries(multiEntry)) {
             if (field in picked && typeof picked[field] === 'string') {
@@ -90,7 +98,7 @@ export class DataFetchRepository {
 
   async enrichIndexed(
     tableName: string,
-    indexedBy: Array<{ localKey: string; foreignTable: string; foreignProperties: Record<string, string> }>,
+    foreignFields: Record<string, ForeignFieldConfig>,
     progress?: WritableSignal<TableFetchProgress>,
   ): Promise<void> {
     const BATCH_SIZE = 500;
@@ -98,32 +106,27 @@ export class DataFetchRepository {
     const allRecords = await indexedTable.toArray() as Record<string, unknown>[];
     const total = allRecords.length;
 
-    const lookups: Array<{
-      localKey: string;
-      foreignProperties: Record<string, string>;
-      map: Map<unknown, Record<string, unknown>>;
-    }> = [];
-
-    for (const entry of indexedBy) {
-      const foreignRecords = await this.db.instance.table(`${entry.foreignTable}_indexed`).toArray() as Record<string, unknown>[];
-      const map = new Map<unknown, Record<string, unknown>>();
-      for (const fr of foreignRecords) map.set(fr['id'], fr);
-      lookups.push({ localKey: entry.localKey, foreignProperties: entry.foreignProperties, map });
+    // Build one lookup map per unique foreignTable
+    const tableMaps = new Map<string, Map<unknown, Record<string, unknown>>>();
+    for (const cfg of Object.values(foreignFields)) {
+      if (!tableMaps.has(cfg.foreignTable)) {
+        const rows = await this.db.instance.table(`${cfg.foreignTable}_indexed`).toArray() as Record<string, unknown>[];
+        const map = new Map<unknown, Record<string, unknown>>();
+        for (const r of rows) map.set(r['id'], r);
+        tableMaps.set(cfg.foreignTable, map);
+      }
     }
 
-    progress?.set({ tableName, recordsLoaded: 0, total, percent: 0, done: false, label: 'Enrichissement' });
+    progress?.set({ tableName, recordsLoaded: 0, total, percent: 0, done: false, label: 'Indexing' });
 
     let processed = 0;
     for (let i = 0; i < allRecords.length; i += BATCH_SIZE) {
       const batch = allRecords.slice(i, i + BATCH_SIZE).map(record => {
         const result = { ...record };
-        for (const { localKey, foreignProperties, map } of lookups) {
-          const foreignRecord = map.get(record[localKey]);
-          if (foreignRecord) {
-            for (const [foreignProp, localProp] of Object.entries(foreignProperties)) {
-              result[localProp] = foreignRecord[foreignProp];
-            }
-          }
+        for (const [fieldName, cfg] of Object.entries(foreignFields)) {
+          const tableMap = tableMaps.get(cfg.foreignTable);
+          const foreignRecord = tableMap?.get(record[cfg.foreignKey]);
+          result[fieldName] = foreignRecord ? (foreignRecord[cfg.property] ?? null) : null;
         }
         return result;
       });
@@ -136,7 +139,7 @@ export class DataFetchRepository {
         total,
         percent: Math.round((processed / total) * 100),
         done: processed >= total,
-        label: 'Enrichissement',
+        label: 'Indexing',
       });
     }
   }

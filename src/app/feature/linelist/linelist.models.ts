@@ -1,1 +1,1 @@
-export type { ColumnConfig, SubColumnConfig, OneToManyColumn, FilterConfig } from '../../models/config.model';
+export type { ColumnConfig, SubColumnConfig, OneToManyColumn, FilterConfig, InternalFilter } from '../../models/config.model';
