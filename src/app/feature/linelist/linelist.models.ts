@@ -12,7 +12,9 @@ export interface TitleColumn extends BaseColumn { type: 'title'; }
 export interface StringColumn extends BaseColumn { type: 'string'; }
 export interface DateColumn extends BaseColumn { type: 'date'; format: string; }
 export interface RelationColumn extends BaseColumn { type: 'relation'; table: string; displayProperty: string; }
-export interface OneToManyColumn extends BaseColumn { type: 'oneToMany'; table: string; foreignKey: string; displayProperty: string; }
+export interface OneToManyColumn extends BaseColumn { type: 'oneToMany'; table: string; foreignKey: string; displayProperty: string; subColumns?: SubColumnConfig[]; }
+
+export type SubColumnConfig = TitleColumn | StringColumn | DateColumn | EnumColumn;
 export interface EnumColumn extends BaseColumn { type: 'enum'; variants?: Record<string, BadgeVariant>; containsVariants?: Record<string, BadgeVariant>; }
 
 export type ColumnConfig = TitleColumn | StringColumn | DateColumn | RelationColumn | OneToManyColumn | EnumColumn;

@@ -84,7 +84,15 @@
                   <td app-cell-many-to-one [value]="cellValue(row, col.key)" [table]="$any(col).table" [displayProperty]="$any(col).displayProperty"></td>
                 }
                 @case ('oneToMany') {
-                  <td app-cell-one-to-many [rowId]="row.id" [table]="$any(col).table" [foreignKey]="$any(col).foreignKey" [displayProperty]="$any(col).displayProperty"></td>
+                  <td app-cell-one-to-many
+                    [rowId]="row.id"
+                    [table]="$any(col).table"
+                    [foreignKey]="$any(col).foreignKey"
+                    [displayProperty]="$any(col).displayProperty"
+                    [subColumns]="$any(col).subColumns"
+                    [expanded]="isExpanded(row.id, col.key)"
+                    (toggleExpand)="onToggleExpand(row.id, col.key)">
+                  </td>
                 }
                 @case ('enum') {
                   <td app-cell-enum [value]="cellValue(row, col.key)" [variants]="$any(col).variants ?? {}" [containsVariants]="$any(col).containsVariants ?? {}"></td>
@@ -92,6 +100,21 @@
               }
             }
           </tr>
+          @let expandedColKey = expandedRowColumn(row.id);
+          @if (expandedColKey) {
+            @let expandedCol = getOneToManyColumn(expandedColKey);
+            @if (expandedCol?.subColumns) {
+              <tr class="border-b border-default bg-neutral-primary-soft">
+                <td [attr.colspan]="columns.length" class="p-0">
+                  <app-row-expanded-one-to-many
+                    [rowId]="row.id"
+                    [table]="expandedCol!.table"
+                    [foreignKey]="expandedCol!.foreignKey"
+                    [subColumns]="expandedCol!.subColumns!"/>
+                </td>
+              </tr>
+            }
+          }
         }
       </tbody>
     </table>

@@ -11,11 +11,12 @@ import { CellDateComponent } from './cells/cell-date/cell-date.component';
 import { CellManyToOneComponent } from './cells/cell-many-to-one/cell-many-to-one.component';
 import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-many.component';
 import { CellEnumComponent } from './cells/cell-enum/cell-enum.component';
+import { RowExpandedOneToManyComponent } from './cells/row-expanded-one-to-many/row-expanded-one-to-many.component';
 import { FilterTextComponent } from './filters/filter-text/filter-text.component';
 import { FilterSelectComponent } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
 import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
-import { ColumnConfig, FilterConfig } from './linelist.models';
+import { ColumnConfig, FilterConfig, OneToManyColumn } from './linelist.models';
 
 @Component({
   selector: 'app-linelist',
@@ -33,6 +34,7 @@ import { ColumnConfig, FilterConfig } from './linelist.models';
     CellManyToOneComponent,
     CellOneToManyComponent,
     CellEnumComponent,
+    RowExpandedOneToManyComponent,
     FilterTextComponent,
     FilterSelectComponent,
     FilterForeignKeyComponent,
@@ -51,7 +53,14 @@ export class LinelistComponent implements OnInit {
     { key: 'areaId', label: 'Area', type: 'relation', table: 'areas', displayProperty: 'name' },
     { key: 'adeq', label: 'Adeq', sortable: false, type: 'enum', variants: { ADEQ: 'success', INADEQ: 'danger' } },
     { key: 'finalResult', label: 'Final result', sortable: false, type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
-    { key: 'specimens', label: 'Specimens', sortable: false, type: 'oneToMany', table: 'specimens', foreignKey: 'caseId', displayProperty: 'bid' },
+    {
+      key: 'specimens', label: 'Specimens', sortable: false, type: 'oneToMany', table: 'specimens', foreignKey: 'caseId', displayProperty: 'bid',
+      subColumns: [
+        { key: 'bid', label: 'Specimen BID', type: 'title' },
+        { key: 'finalResult', label: 'Final result', type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
+        { key: 'createdAt', label: 'Created At', type: 'date', format: 'dd/MM/yyyy' },
+      ],
+    },
     { key: 'year', label: 'Year', sortable: true, type: 'string' },
     { key: 'createdAt', label: 'Created At', sortable: true, type: 'date', format: 'dd/MM/yyyy' },
   ];
@@ -80,6 +89,7 @@ export class LinelistComponent implements OnInit {
   rows = signal<IdbObject[]>([]);
   total = signal<number>(0);
   totalPages = signal<number>(0);
+  expandedRows = signal<Map<string, string>>(new Map());
 
   readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
 
@@ -118,7 +128,30 @@ export class LinelistComponent implements OnInit {
     return row[key] as string;
   }
 
+  isExpanded(rowId: string, colKey: string): boolean {
+    return this.expandedRows().get(rowId) === colKey;
+  }
+
+  expandedRowColumn(rowId: string): string | undefined {
+    return this.expandedRows().get(rowId);
+  }
+
+  getOneToManyColumn(colKey: string): OneToManyColumn | undefined {
+    return this.columns.find(c => c.key === colKey && c.type === 'oneToMany') as OneToManyColumn | undefined;
+  }
+
+  onToggleExpand(rowId: string, colKey: string): void {
+    const next = new Map(this.expandedRows());
+    if (next.get(rowId) === colKey) {
+      next.delete(rowId);
+    } else {
+      next.set(rowId, colKey);
+    }
+    this.expandedRows.set(next);
+  }
+
   private async loadData(): Promise<void> {
+    this.expandedRows.set(new Map());
     const filteredIds = this.filteredIds();
     const result = await this.dataRepository.getPaginated(
       this.table(),
