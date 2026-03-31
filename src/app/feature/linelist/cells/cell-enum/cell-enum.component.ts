@@ -18,12 +18,12 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   template: `
     @if (multiple()) {
       @for (item of asArray(); track $index; let last = $last) {
-        <span [class]="itemBadgeClass(item) + ' text-xs font-medium px-1.5 py-0.5 rounded'">{{ item }}</span>
+        <span [class]="itemBadgeClass(item) + ' text-xs font-medium px-1.5 py-0.5 rounded'">{{ labelFor(item) }}</span>
         @if (!last) {<span class="text-body opacity-40 text-xs mx-0.5">{{ separator() }}</span>}
       }
     } @else {
       <span [class]="singleBadgeClass() + ' text-xs font-medium px-1.5 py-0.5 rounded'">
-        {{ singleValue() }}
+        {{ singleLabel() }}
       </span>
     }
   `,
@@ -33,6 +33,7 @@ export class CellEnumComponent {
   value = input.required<string | string[]>();
   variants = input<Record<string, BadgeVariant>>({});
   containsVariants = input<Record<string, BadgeVariant>>({});
+  labels = input<Record<string, string>>({});
   multiple = input<boolean>(false);
   separator = input<string>(', ');
 
@@ -53,6 +54,15 @@ export class CellEnumComponent {
     }
     return VARIANT_CLASSES['default'];
   }
+
+  labelFor(item: string): string {
+    return this.labels()[item] ?? item;
+  }
+
+  singleLabel = computed(() => {
+    const val = this.singleValue();
+    return this.labels()[val] ?? val;
+  });
 
   singleBadgeClass = computed(() => {
     const val = this.singleValue();

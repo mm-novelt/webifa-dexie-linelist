@@ -32,6 +32,7 @@ const EnumColumnSchema = z.object({
   separator: z.string().optional(),
   variants: z.record(z.string(), BadgeVariantSchema).optional(),
   containsVariants: z.record(z.string(), BadgeVariantSchema).optional(),
+  labels: z.record(z.string(), z.string()).optional(),
 });
 
 /** Allowed column types inside an expandable one-to-many sub-table. */
@@ -122,11 +123,13 @@ const TextFilterSchema = z.object({
   placeholder: z.string().optional(),
 });
 
-/** Dropdown filter that matches an exact value against a single field. */
+/** Dropdown filter that matches an exact value against a single field. When `multiple` is true, renders a multi-select and unions results across all selected values. */
 const SelectFilterSchema = z.object({
   type: z.literal('select'),
   key: z.string(),
   field: z.string(),
+  /** When true, allows selecting multiple values (OR logic within this filter). */
+  multiple: z.boolean().optional(),
   placeholder: z.string().optional(),
   options: z.array(SelectOptionSchema),
 });
