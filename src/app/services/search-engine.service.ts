@@ -30,6 +30,57 @@ export class SearchEngineService {
     return (await this.db.instance.table('searchEngine').count()) > 0;
   }
 
+  async clearIndex(): Promise<void> {
+    await this.db.instance.table('searchEngine').clear();
+  }
+
+  async buildIndexForTable(
+    tableName: string,
+    properties: string[],
+    onProgress?: (progress: IndexingProgress) => void,
+  ): Promise<void> {
+    const store = this.db.instance.table<SearchEntry>('searchEngine');
+    const relatedData = await this.preloadRelatedTablesForTable(tableName, properties);
+
+    const items = await this.db.instance.table(`${tableName}_indexed`).toArray() as Record<string, unknown>[];
+    const total = items.length;
+    let current = 0;
+    let lastPercent = -1;
+
+    const reportProgress = () => {
+      if (!onProgress) return;
+      const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+      if (percent !== lastPercent) {
+        lastPercent = percent;
+        onProgress({ current, total, percent });
+      }
+    };
+
+    reportProgress();
+
+    const batch: SearchEntry[] = [];
+    for (const item of items) {
+      const objectId = item['id'] as string;
+      for (const propertyPath of properties) {
+        const localPath = propertyPath.slice(tableName.length + 1);
+        const raw = this.resolvePath(item, localPath, relatedData);
+        if (raw === null || raw === undefined) continue;
+        for (const token of this.tokenize(raw)) {
+          batch.push({ objectId, tableName, property: propertyPath, value: token });
+          if (batch.length >= BATCH_SIZE) {
+            await store.bulkAdd(batch.splice(0, BATCH_SIZE));
+          }
+        }
+      }
+      current++;
+      reportProgress();
+    }
+
+    if (batch.length > 0) {
+      await store.bulkAdd(batch);
+    }
+  }
+
   async buildIndex(
     searchConfig: Record<string, string[]>,
     onProgress?: (progress: IndexingProgress) => void,
@@ -159,6 +210,28 @@ export class SearchEngineService {
       }
     }
 
+    return this.loadRelatedTables(needed);
+  }
+
+  private async preloadRelatedTablesForTable(
+    tableName: string,
+    properties: string[],
+  ): Promise<Map<string, Map<string, Record<string, unknown>>>> {
+    const needed = new Set<string>();
+
+    for (const prop of properties) {
+      const segments = prop.slice(tableName.length + 1).split('.');
+      if (segments.length > 1) {
+        needed.add(segments[0] + 's');
+      }
+    }
+
+    return this.loadRelatedTables(needed);
+  }
+
+  private async loadRelatedTables(
+    needed: Set<string>,
+  ): Promise<Map<string, Map<string, Record<string, unknown>>>> {
     const result = new Map<string, Map<string, Record<string, unknown>>>();
     await Promise.all(
       [...needed].map(async relTable => {

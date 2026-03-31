@@ -14,8 +14,12 @@ export const routes: Routes = [
     component: LinelistComponent,
   },
   {
+    path: '',
+    redirectTo: 'linelist/cases',
+    pathMatch: 'full',
+  },
+  {
     path: '**',
-    canActivate: [dbExistsGuard],
-    children: [],
+    redirectTo: 'linelist/cases',
   },
 ];

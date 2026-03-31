@@ -146,6 +146,14 @@ export class GettingStartedComponent {
       this.tableProgressSignals.set(progressSignals);
       this.isFetching.set(true);
 
+      const hasSearchConfig = Object.keys(config.searchEngine).length > 0;
+      const alreadyIndexed = hasSearchConfig ? await this.searchEngine.isIndexed() : true;
+
+      if (hasSearchConfig && !alreadyIndexed) {
+        await this.searchEngine.clearIndex();
+        this.isIndexing.set(true);
+      }
+
       await Promise.all(
         entries.map(async ([tableName, url], i) => {
           const count = await this.db.instance.table(`${tableName}_data`).count();
@@ -154,22 +162,19 @@ export class GettingStartedComponent {
           } else {
             await this.dataFetchRepository.fetchAndStore(tableName, url, config.tables[tableName] ?? ['id'], progressSignals[i]);
           }
+
+          if (!alreadyIndexed && config.searchEngine[tableName]) {
+            await this.searchEngine.buildIndexForTable(
+              tableName,
+              config.searchEngine[tableName],
+              progress => this.indexingProgress.set(progress),
+            );
+          }
         }),
       );
 
       this.isFetching.set(false);
-
-      if (Object.keys(config.searchEngine).length > 0) {
-        const alreadyIndexed = await this.searchEngine.isIndexed();
-        if (!alreadyIndexed) {
-          this.isIndexing.set(true);
-          await this.searchEngine.buildIndex(config.searchEngine, progress => {
-            this.indexingProgress.set(progress);
-          });
-          this.isIndexing.set(false);
-        }
-      }
-
+      this.isIndexing.set(false);
       this.isDone.set(true);
     });
   }
