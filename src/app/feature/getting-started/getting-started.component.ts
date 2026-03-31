@@ -67,10 +67,10 @@ export class GettingStartedComponent {
         }),
       );
 
-      for (const [tableName] of entries) {
+      for (const [i, [tableName]] of entries.entries()) {
         const indexedBy = config.indexedBy[tableName];
         if (indexedBy?.length) {
-          await this.dataFetchRepository.enrichIndexed(tableName, indexedBy);
+          await this.dataFetchRepository.enrichIndexed(tableName, indexedBy, progressSignals[i]);
         }
       }
 

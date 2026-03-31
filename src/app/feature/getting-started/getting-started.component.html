@@ -50,9 +50,13 @@
         @for (progress of tableProgressList(); track progress.tableName) {
           <div class="mb-3">
             <div class="flex justify-between text-xs mb-1">
-              <span class="font-medium text-gray-700">{{ progress.tableName }}</span>
-              <span class="text-gray-400">{{ progress.recordsLoaded }}/{{ progress.total }} ({{ progress.percent }}
-                %)</span>
+              <span class="font-medium text-gray-700">
+                {{ progress.tableName }}
+                @if (progress.label) {
+                  <span class="text-gray-400 font-normal ml-1">— {{ progress.label }}</span>
+                }
+              </span>
+              <span class="text-gray-400">{{ progress.recordsLoaded }}/{{ progress.total }} ({{ progress.percent }}%)</span>
             </div>
             <div class="w-full bg-gray-100 rounded-full h-1.5">
               <div

@@ -24,6 +24,7 @@ export interface TableFetchProgress {
   total: number;
   percent: number;
   done: boolean;
+  label?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -98,9 +99,12 @@ export class DataFetchRepository {
   async enrichIndexed(
     tableName: string,
     indexedBy: Array<{ localKey: string; foreignTable: string; foreignProperties: Record<string, string> }>,
+    progress?: WritableSignal<TableFetchProgress>,
   ): Promise<void> {
+    const BATCH_SIZE = 500;
     const indexedTable = this.db.instance.table(`${tableName}_indexed`);
     const allRecords = await indexedTable.toArray() as Record<string, unknown>[];
+    const total = allRecords.length;
 
     const lookups: Array<{
       localKey: string;
@@ -115,20 +119,34 @@ export class DataFetchRepository {
       lookups.push({ localKey: entry.localKey, foreignProperties: entry.foreignProperties, map });
     }
 
-    const enriched = allRecords.map(record => {
-      const result = { ...record };
-      for (const { localKey, foreignProperties, map } of lookups) {
-        const foreignRecord = map.get(record[localKey]);
-        if (foreignRecord) {
-          for (const [foreignProp, localProp] of Object.entries(foreignProperties)) {
-            result[localProp] = foreignRecord[foreignProp];
+    progress?.set({ tableName, recordsLoaded: 0, total, percent: 0, done: false, label: 'Enrichissement' });
+
+    let processed = 0;
+    for (let i = 0; i < allRecords.length; i += BATCH_SIZE) {
+      const batch = allRecords.slice(i, i + BATCH_SIZE).map(record => {
+        const result = { ...record };
+        for (const { localKey, foreignProperties, map } of lookups) {
+          const foreignRecord = map.get(record[localKey]);
+          if (foreignRecord) {
+            for (const [foreignProp, localProp] of Object.entries(foreignProperties)) {
+              result[localProp] = foreignRecord[foreignProp];
+            }
           }
         }
-      }
-      return result;
-    });
+        return result;
+      });
 
-    await indexedTable.bulkPut(enriched);
+      await indexedTable.bulkPut(batch);
+      processed += batch.length;
+      progress?.set({
+        tableName,
+        recordsLoaded: processed,
+        total,
+        percent: Math.round((processed / total) * 100),
+        done: processed >= total,
+        label: 'Enrichissement',
+      });
+    }
   }
 }
 
