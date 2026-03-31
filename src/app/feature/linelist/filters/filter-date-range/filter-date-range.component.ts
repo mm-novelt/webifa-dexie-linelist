@@ -1,4 +1,5 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, inject, input, signal, WritableSignal } from '@angular/core';
+import { DataRepository } from '../../../../repositories/data.repository';
 
 export interface DateExactFilter { mode: 'exact'; value: string; }
 export interface DateRangeFilter { mode: 'range'; from: string; to: string; }
@@ -54,8 +55,15 @@ function parseDateInput(raw: string): DateFilterValue | null {
 export class FilterDateRangeComponent {
   readonly inputId = `filter-date-${Math.random().toString(36).slice(2)}`;
 
+  filterKey = input.required<string>();
+  table = input.required<string>();
+  field = input.required<string>();
+  numeric = input<boolean>(false);
   placeholder = input<string>('Year or range...');
-  dateFilter = output<DateFilterValue | null>();
+  filterResultsSignal = input.required<WritableSignal<Map<string, string[]>>>();
+  reloadFn = input.required<() => Promise<void>>();
+
+  private dataRepository = inject(DataRepository);
 
   parsedValue = signal<DateFilterValue | null>(null);
 
@@ -64,15 +72,30 @@ export class FilterDateRangeComponent {
   onInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
+    this.debounceTimer = setTimeout(async () => {
+      const sig = this.filterResultsSignal();
+      const map = new Map(sig());
+
       if (!raw.trim()) {
         this.parsedValue.set(null);
-        this.dateFilter.emit(null);
+        map.delete(this.filterKey());
+        sig.set(map);
+        await this.reloadFn()();
         return;
       }
+
       const parsed = parseDateInput(raw);
       this.parsedValue.set(parsed);
-      this.dateFilter.emit(parsed);
+      if (!parsed) return;
+
+      const cast = (v: string) => this.numeric() ? Number(v) : v;
+      const ids = parsed.mode === 'exact'
+        ? await this.dataRepository.searchByExactValue(this.table(), this.field(), cast(parsed.value))
+        : await this.dataRepository.searchByRange(this.table(), this.field(), cast(parsed.from), cast(parsed.to));
+
+      map.set(this.filterKey(), ids);
+      sig.set(map);
+      await this.reloadFn()();
     }, 300);
   }
 }

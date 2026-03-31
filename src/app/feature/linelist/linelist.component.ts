@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal, WritableSignal } from '@angular/core';
 import { DataRepository, SortDirection } from '../../repositories/data.repository';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../header/header.component';
@@ -11,10 +11,10 @@ import { CellDateComponent } from './cells/cell-date/cell-date.component';
 import { CellManyToOneComponent } from './cells/cell-many-to-one/cell-many-to-one.component';
 import { CellOneToManyComponent } from './cells/cell-one-to-many/cell-one-to-many.component';
 import { BadgeVariant, CellEnumComponent } from './cells/cell-enum/cell-enum.component';
-import { FilterTextComponent } from './filters/filter-text/filter-text.component';
+import { FilterTextComponent, RelatedFieldSearch } from './filters/filter-text/filter-text.component';
 import { FilterSelectComponent, SelectOption } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
-import { DateFilterValue, FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
+import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
 
 interface BaseColumn {
   key: string;
@@ -35,6 +35,7 @@ export interface TextFilterConfig {
   type: 'text';
   key: string;
   fields: string[];
+  relatedSearches?: RelatedFieldSearch[];
   placeholder?: string;
 }
 
@@ -105,7 +106,15 @@ export class LinelistComponent implements OnInit {
   ];
 
   readonly filters: FilterConfig[] = [
-    { type: 'text', key: 'search', fields: ['bid', 'patientName', 'finalResult'], placeholder: 'Search...' },
+    {
+      type: 'text',
+      key: 'search',
+      fields: ['bid', 'patientName', 'finalResult'],
+      relatedSearches: [
+        { table: 'areas', field: 'name', foreignKey: 'areaId' }
+      ],
+      placeholder: 'Search...',
+    },
     { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'Adeq — All', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
     { type: 'foreignKey', key: 'areaFilter', table: 'areas', displayProperty: 'name', foreignKey: 'areaId', placeholder: 'Area...' },
     { type: 'dateRange', key: 'yearFilter', field: 'year', numeric: true, placeholder: 'Year or range...' },
@@ -121,10 +130,8 @@ export class LinelistComponent implements OnInit {
   total = signal<number>(0);
   totalPages = signal<number>(0);
 
-  /** Per-filter matched IDs: filterKey → string[] */
-  private filterResults = signal<Map<string, string[]>>(new Map());
+  readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
 
-  /** Intersection of all active filters. Null = no active filter (show all). */
   readonly filteredIds = computed<string[] | null>(() => {
     const map = this.filterResults();
     if (map.size === 0) return null;
@@ -134,6 +141,11 @@ export class LinelistComponent implements OnInit {
       return acc.filter(id => lookup.has(id));
     });
   });
+
+  readonly reloadFn: () => Promise<void> = () => {
+    this.currentPage.set(1);
+    return this.loadData();
+  };
 
   async ngOnInit(): Promise<void> {
     await this.loadData();
@@ -148,62 +160,6 @@ export class LinelistComponent implements OnInit {
 
   async onPageChange(page: number): Promise<void> {
     this.currentPage.set(page);
-    await this.loadData();
-  }
-
-  async onTextSearch(filter: TextFilterConfig, term: string): Promise<void> {
-    const map = new Map(this.filterResults());
-    if (!term) {
-      map.delete(filter.key);
-    } else {
-      const ids = await this.dataRepository.searchByText(this.table(), filter.fields, term);
-      map.set(filter.key, ids);
-    }
-    this.filterResults.set(map);
-    this.currentPage.set(1);
-    await this.loadData();
-  }
-
-  async onForeignKeyFilter(filter: ForeignKeyFilterConfig, id: string): Promise<void> {
-    const map = new Map(this.filterResults());
-    if (!id) {
-      map.delete(filter.key);
-    } else {
-      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.foreignKey, id);
-      map.set(filter.key, ids);
-    }
-    this.filterResults.set(map);
-    this.currentPage.set(1);
-    await this.loadData();
-  }
-
-  async onSelectFilter(filter: SelectFilterConfig, value: string): Promise<void> {
-    const map = new Map(this.filterResults());
-    if (!value) {
-      map.delete(filter.key);
-    } else {
-      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.field, value);
-      map.set(filter.key, ids);
-    }
-    this.filterResults.set(map);
-    this.currentPage.set(1);
-    await this.loadData();
-  }
-
-  async onDateRangeFilter(filter: DateRangeFilterConfig, value: DateFilterValue | null): Promise<void> {
-    const map = new Map(this.filterResults());
-    const cast = (v: string) => filter.numeric ? Number(v) : v;
-    if (!value) {
-      map.delete(filter.key);
-    } else if (value.mode === 'exact') {
-      const ids = await this.dataRepository.searchByExactValue(this.table(), filter.field, cast(value.value));
-      map.set(filter.key, ids);
-    } else {
-      const ids = await this.dataRepository.searchByRange(this.table(), filter.field, cast(value.from), cast(value.to));
-      map.set(filter.key, ids);
-    }
-    this.filterResults.set(map);
-    this.currentPage.set(1);
     await this.loadData();
   }
 

@@ -122,6 +122,13 @@ export class DataRepository {
     return keys as string[];
   }
 
+  async searchByAnyOf(tableName: string, field: string, values: IndexableType[]): Promise<string[]> {
+    if (values.length === 0) return [];
+    const table = this.db.instance.table(`${tableName}_indexed`);
+    const keys = await table.where(field).anyOf(values).primaryKeys();
+    return keys as string[];
+  }
+
   async searchByTextAsRecords(tableName: string, fields: string[], term: string): Promise<IdbObject[]> {
     const ids = await this.searchByText(tableName, fields, term);
     if (ids.length === 0) return [];

@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, signal, WritableSignal } from '@angular/core';
 import { DataRepository } from '../../../../repositories/data.repository';
 import { IdbObject } from '../../../../models/idb-object.model';
 
@@ -41,10 +41,14 @@ import { IdbObject } from '../../../../models/idb-object.model';
   `,
 })
 export class FilterForeignKeyComponent {
+  filterKey = input.required<string>();
+  mainTable = input.required<string>();
+  foreignKey = input.required<string>();
   table = input.required<string>();
   displayProperty = input.required<string>();
   placeholder = input<string>('Search...');
-  select = output<string>();
+  filterResultsSignal = input.required<WritableSignal<Map<string, string[]>>>();
+  reloadFn = input.required<() => Promise<void>>();
 
   private dataRepository = inject(DataRepository);
 
@@ -57,13 +61,19 @@ export class FilterForeignKeyComponent {
   onInput(event: Event): void {
     const term = (event.target as HTMLInputElement).value;
     this.inputValue.set(term);
+    this.suggestions.set([]);
+    this.isOpen.set(false);
     clearTimeout(this.debounceTimer);
+
     if (!term.trim()) {
-      this.suggestions.set([]);
-      this.isOpen.set(false);
-      this.select.emit('');
+      const sig = this.filterResultsSignal();
+      const map = new Map(sig());
+      map.delete(this.filterKey());
+      sig.set(map);
+      void this.reloadFn()();
       return;
     }
+
     this.debounceTimer = setTimeout(async () => {
       const results = await this.dataRepository.searchByTextAsRecords(
         this.table(), [this.displayProperty()], term.trim(),
@@ -73,11 +83,17 @@ export class FilterForeignKeyComponent {
     }, 300);
   }
 
-  selectSuggestion(item: IdbObject): void {
+  async selectSuggestion(item: IdbObject): Promise<void> {
     this.inputValue.set(this.displayValue(item));
     this.suggestions.set([]);
     this.isOpen.set(false);
-    this.select.emit(item.id);
+
+    const ids = await this.dataRepository.searchByExactValue(this.mainTable(), this.foreignKey(), item.id);
+    const sig = this.filterResultsSignal();
+    const map = new Map(sig());
+    map.set(this.filterKey(), ids);
+    sig.set(map);
+    await this.reloadFn()();
   }
 
   onFocusOut(event: FocusEvent): void {

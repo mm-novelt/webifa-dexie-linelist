@@ -8,26 +8,44 @@
           @switch (filter.type) {
             @case ('text') {
               <app-filter-text
+                [filterKey]="filter.key"
+                [table]="table()"
+                [fields]="$any(filter).fields"
+                [relatedSearches]="$any(filter).relatedSearches ?? []"
                 [placeholder]="filter.placeholder ?? 'Search'"
-                (search)="onTextSearch($any(filter), $event)"/>
+                [filterResultsSignal]="filterResults"
+                [reloadFn]="reloadFn"/>
             }
             @case ('select') {
               <app-filter-select
+                [filterKey]="filter.key"
+                [table]="table()"
+                [field]="$any(filter).field"
                 [placeholder]="filter.placeholder ?? 'All'"
                 [options]="$any(filter).options"
-                (select)="onSelectFilter($any(filter), $event)"/>
+                [filterResultsSignal]="filterResults"
+                [reloadFn]="reloadFn"/>
             }
             @case ('foreignKey') {
               <app-filter-foreign-key
+                [filterKey]="filter.key"
+                [mainTable]="table()"
+                [foreignKey]="$any(filter).foreignKey"
                 [table]="$any(filter).table"
                 [displayProperty]="$any(filter).displayProperty"
                 [placeholder]="filter.placeholder ?? 'Search...'"
-                (select)="onForeignKeyFilter($any(filter), $event)"/>
+                [filterResultsSignal]="filterResults"
+                [reloadFn]="reloadFn"/>
             }
             @case ('dateRange') {
               <app-filter-date-range
+                [filterKey]="filter.key"
+                [table]="table()"
+                [field]="$any(filter).field"
+                [numeric]="$any(filter).numeric ?? false"
                 [placeholder]="filter.placeholder ?? 'Year or range...'"
-                (dateFilter)="onDateRangeFilter($any(filter), $event)"/>
+                [filterResultsSignal]="filterResults"
+                [reloadFn]="reloadFn"/>
             }
           }
         }

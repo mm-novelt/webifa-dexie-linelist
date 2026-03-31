@@ -1,4 +1,5 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, WritableSignal } from '@angular/core';
+import { DataRepository } from '../../../../repositories/data.repository';
 
 export interface SelectOption {
   label: string;
@@ -20,11 +21,29 @@ export interface SelectOption {
   `,
 })
 export class FilterSelectComponent {
+  filterKey = input.required<string>();
+  table = input.required<string>();
+  field = input.required<string>();
   placeholder = input<string>('All');
   options = input.required<SelectOption[]>();
-  select = output<string>();
+  filterResultsSignal = input.required<WritableSignal<Map<string, string[]>>>();
+  reloadFn = input.required<() => Promise<void>>();
 
-  onChange(event: Event): void {
-    this.select.emit((event.target as HTMLSelectElement).value);
+  private dataRepository = inject(DataRepository);
+
+  async onChange(event: Event): Promise<void> {
+    const value = (event.target as HTMLSelectElement).value;
+    const sig = this.filterResultsSignal();
+    const map = new Map(sig());
+
+    if (!value) {
+      map.delete(this.filterKey());
+    } else {
+      const ids = await this.dataRepository.searchByExactValue(this.table(), this.field(), value);
+      map.set(this.filterKey(), ids);
+    }
+
+    sig.set(map);
+    await this.reloadFn()();
   }
 }
