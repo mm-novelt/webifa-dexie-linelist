@@ -16,7 +16,8 @@ import { FilterTextComponent } from './filters/filter-text/filter-text.component
 import { FilterSelectComponent } from './filters/filter-select/filter-select.component';
 import { FilterForeignKeyComponent } from './filters/filter-foreign-key/filter-foreign-key.component';
 import { FilterDateRangeComponent } from './filters/filter-date-range/filter-date-range.component';
-import { ColumnConfig, FilterConfig, InternalFilterConfig, OneToManyColumn } from './linelist.models';
+import { ColumnConfig, FilterConfig, OneToManyColumn } from './linelist.models';
+import { ConfigService } from '../../services/config.service';
 
 @Component({
   selector: 'app-linelist',
@@ -46,43 +47,10 @@ export class LinelistComponent implements OnInit {
   table = input.required<string>();
 
   private dataRepository = inject(DataRepository);
+  private configService = inject(ConfigService);
 
-  readonly columns: ColumnConfig[] = [
-    { key: 'bid', label: 'Case BID', sortable: true, type: 'title' },
-    { key: 'patientName', label: 'Patient name', sortable: true, type: 'string' },
-    { key: 'areaId', label: 'Area', type: 'relation', table: 'areas', displayProperty: 'name' },
-    { key: 'adeq', label: 'Adeq', sortable: false, type: 'enum', variants: { ADEQ: 'success', INADEQ: 'danger' } },
-    { key: 'finalResult', label: 'Final result', sortable: false, type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
-    {
-      key: 'specimens', label: 'Specimens', sortable: false, type: 'oneToMany', table: 'specimens', foreignKey: 'caseId', displayProperty: 'bid',
-      subColumns: [
-        { key: 'bid', label: 'Specimen BID', type: 'title' },
-        { key: 'finalResult', label: 'Final result', type: 'enum', containsVariants: { WPV1: 'danger', WPV2: 'danger', WPV3: 'danger' } },
-        { key: 'createdAt', label: 'Created At', type: 'date', format: 'dd/MM/yyyy' },
-      ],
-    },
-    { key: 'year', label: 'Year', sortable: true, type: 'string' },
-    { key: 'createdAt', label: 'Created At', sortable: true, type: 'date', format: 'dd/MM/yyyy' },
-  ];
-
-  readonly internalFilters: InternalFilterConfig[] = [
-    { type: 'foreignKey', sourceTable: 'areas', sourceField: 'published', sourceValue: 1, targetForeignKey: 'areaId' },
-  ];
-
-  readonly filters: FilterConfig[] = [
-    {
-      type: 'text',
-      key: 'search',
-      fields: ['bid', 'patientName', 'finalResult'],
-      relatedSearches: [
-        { table: 'areas', field: 'name', foreignKey: 'areaId' }
-      ],
-      placeholder: 'Search...',
-    },
-    { type: 'select', key: 'adeq', field: 'adeq', placeholder: 'All Adeq result', options: [{ label: 'ADEQ', value: 'ADEQ' }, { label: 'INADEQ', value: 'INADEQ' }] },
-    { type: 'foreignKey', key: 'areaFilter', table: 'areas', displayProperty: 'name', foreignKey: 'areaId', placeholder: 'Area...' },
-    { type: 'dateRange', key: 'yearFilter', field: 'year', numeric: true, placeholder: 'Year or range...' },
-  ];
+  readonly columns = computed<ColumnConfig[]>(() => this.configService.query.data()?.columns[this.table()] ?? []);
+  readonly filters = computed<FilterConfig[]>(() => this.configService.query.data()?.filters[this.table()] ?? []);
 
   readonly pageSize = 10;
 
@@ -94,8 +62,6 @@ export class LinelistComponent implements OnInit {
   total = signal<number>(0);
   totalPages = signal<number>(0);
   expandedRows = signal<Map<string, string>>(new Map());
-
-  readonly internalFilteredIds = signal<string[] | null>(null);
 
   readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
 
@@ -115,7 +81,6 @@ export class LinelistComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
-    this.internalFilteredIds.set(await this.resolveInternalFilters());
     await this.loadData();
   }
 
@@ -144,7 +109,7 @@ export class LinelistComponent implements OnInit {
   }
 
   getOneToManyColumn(colKey: string): OneToManyColumn | undefined {
-    return this.columns.find(c => c.key === colKey && c.type === 'oneToMany') as OneToManyColumn | undefined;
+    return this.columns().find(c => c.key === colKey && c.type === 'oneToMany') as OneToManyColumn | undefined;
   }
 
   onToggleExpand(rowId: string, colKey: string): void {
@@ -157,43 +122,15 @@ export class LinelistComponent implements OnInit {
     this.expandedRows.set(next);
   }
 
-  private async resolveInternalFilters(): Promise<string[] | null> {
-    if (this.internalFilters.length === 0) return null;
-    const results = await Promise.all(
-      this.internalFilters.map(async (f) => {
-        const sourceIds = await this.dataRepository.searchByExactValue(f.sourceTable, f.sourceField, f.sourceValue);
-        if (sourceIds.length === 0) return [];
-        return this.dataRepository.searchByAnyOf(this.table(), f.targetForeignKey, sourceIds);
-      }),
-    );
-    return results.reduce((acc, ids) => {
-      const lookup = new Set(ids);
-      return acc.filter(id => lookup.has(id));
-    });
-  }
-
   private async loadData(): Promise<void> {
     this.expandedRows.set(new Map());
-    const filteredIds = this.filteredIds();
-    const internalIds = this.internalFilteredIds();
-
-    let finalIds: string[] | undefined;
-    if (filteredIds !== null && internalIds !== null) {
-      const lookup = new Set(internalIds);
-      finalIds = filteredIds.filter(id => lookup.has(id));
-    } else if (filteredIds !== null) {
-      finalIds = filteredIds;
-    } else if (internalIds !== null) {
-      finalIds = internalIds;
-    }
-
     const result = await this.dataRepository.getPaginated(
       this.table(),
       this.currentPage(),
       this.pageSize,
       this.orderColumn(),
       this.orderDirection(),
-      finalIds,
+      this.filteredIds() ?? undefined,
     );
     this.rows.set(result.data);
     this.total.set(result.total);

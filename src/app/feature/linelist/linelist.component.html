@@ -4,7 +4,7 @@
   <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default">
     <div class="p-4 flex items-center justify-between space-x-4">
       <div class="flex items-center gap-3">
-        @for (filter of filters; track filter.key) {
+        @for (filter of filters(); track filter.key) {
           @switch (filter.type) {
             @case ('text') {
               <app-filter-text
@@ -54,7 +54,7 @@
     <table class="w-full text-sm text-left rtl:text-right text-body">
       <thead class="text-sm text-body bg-neutral-secondary-medium border-b border-t border-default-medium">
       <tr>
-        @for (col of columns; track col.key) {
+        @for (col of columns(); track col.key) {
           <th app-table-column-header
               [label]="col.label"
               [columnKey]="col.key"
@@ -69,7 +69,7 @@
       <tbody>
         @for (row of rows(); track $index) {
           <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            @for (col of columns; track col.key) {
+            @for (col of columns(); track col.key) {
               @switch (col.type) {
                 @case ('title') {
                   <th app-cell-title [value]="cellValue(row, col.key)"></th>
@@ -105,7 +105,7 @@
             @let expandedCol = getOneToManyColumn(expandedColKey);
             @if (expandedCol?.subColumns) {
               <tr class="border-b border-default bg-neutral-primary-soft">
-                <td [attr.colspan]="columns.length" class="p-0">
+                <td [attr.colspan]="columns().length" class="p-0">
                   <app-row-expanded-one-to-many
                     [rowId]="row.id"
                     [table]="expandedCol!.table"

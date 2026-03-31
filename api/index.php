@@ -398,6 +398,42 @@ class Kernel extends BaseKernel
         ],
         'areas' => ['areas.name'],
       ],
+      'columns' => [
+        'cases' => [
+          ['type' => 'title', 'key' => 'bid', 'label' => 'Case BID', 'sortable' => true],
+          ['type' => 'string', 'key' => 'patientName', 'label' => 'Patient name', 'sortable' => true],
+          ['type' => 'relation', 'key' => 'areaId', 'label' => 'Area', 'table' => 'areas', 'displayProperty' => 'name'],
+          ['type' => 'enum', 'key' => 'adeq', 'label' => 'Adeq', 'sortable' => false, 'variants' => ['ADEQ' => 'success', 'INADEQ' => 'danger']],
+          ['type' => 'enum', 'key' => 'finalResult', 'label' => 'Final result', 'sortable' => false, 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
+          [
+            'type' => 'oneToMany', 'key' => 'specimens', 'label' => 'Specimens', 'sortable' => false,
+            'table' => 'specimens', 'foreignKey' => 'caseId', 'displayProperty' => 'bid',
+            'subColumns' => [
+              ['type' => 'title', 'key' => 'bid', 'label' => 'Specimen BID'],
+              ['type' => 'enum', 'key' => 'finalResult', 'label' => 'Final result', 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
+              ['type' => 'date', 'key' => 'createdAt', 'label' => 'Created At', 'format' => 'dd/MM/yyyy'],
+            ],
+          ],
+          ['type' => 'string', 'key' => 'year', 'label' => 'Year', 'sortable' => true],
+          ['type' => 'date', 'key' => 'createdAt', 'label' => 'Created At', 'sortable' => true, 'format' => 'dd/MM/yyyy'],
+        ],
+        'areas' => [],
+        'specimens' => [],
+      ],
+      'filters' => [
+        'cases' => [
+          [
+            'type' => 'text', 'key' => 'search', 'fields' => ['bid', 'patientName', 'finalResult'],
+            'relatedSearches' => [['table' => 'areas', 'field' => 'name', 'foreignKey' => 'areaId']],
+            'placeholder' => 'Search...',
+          ],
+          ['type' => 'select', 'key' => 'adeq', 'field' => 'adeq', 'placeholder' => 'All Adeq result', 'options' => [['label' => 'ADEQ', 'value' => 'ADEQ'], ['label' => 'INADEQ', 'value' => 'INADEQ']]],
+          ['type' => 'foreignKey', 'key' => 'areaFilter', 'table' => 'areas', 'displayProperty' => 'name', 'foreignKey' => 'areaId', 'placeholder' => 'Area...'],
+          ['type' => 'dateRange', 'key' => 'yearFilter', 'field' => 'year', 'numeric' => true, 'placeholder' => 'Year or range...'],
+        ],
+        'areas' => [],
+        'specimens' => [],
+      ],
     ]);
   }
 }
