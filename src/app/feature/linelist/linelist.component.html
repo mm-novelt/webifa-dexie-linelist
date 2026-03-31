@@ -62,6 +62,15 @@
         </select>
       }
     </div>
+    <div class="relative">
+    @if (isSearchLoading()) {
+      <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+        <svg aria-hidden="true" class="w-8 h-8 animate-spin text-gray-300 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100 50.6C100 78.2 77.6 100.6 50 100.6S0 78.2 0 50.6 22.4.6 50 .6s50 22.4 50 50Z" fill="currentColor"/>
+          <path d="M93.97 39.04c2.43-.64 3.9-3.14 3.02-5.5A50 50 0 0 0 5.03 32.6c-.88 2.36.6 4.86 3.03 5.5l6.16 1.63c2.43.64 4.88-.85 5.66-3.23a35.71 35.71 0 0 1 62.24-.81c.82 2.37 3.27 3.82 5.7 3.18l6.15-1.63Z" fill="currentFill"/>
+        </svg>
+      </div>
+    }
     <table class="w-full text-sm text-left rtl:text-right text-body">
       <thead class="text-sm text-body bg-neutral-secondary-medium border-b border-t border-default-medium">
       <tr>
@@ -129,6 +138,7 @@
         }
       </tbody>
     </table>
+    </div>
     <app-pagination
       [currentPage]="currentPage()"
       [totalPages]="totalPages()"

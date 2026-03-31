@@ -21,10 +21,16 @@ interface FilteredOrderCache {
   pages: Map<number, string[]>;
 }
 
+interface EffectiveFilterCache {
+  key: string;
+  effectiveFilteredIds: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class DataRepository {
   private db = inject(DbService);
   private filteredOrderCache: FilteredOrderCache | null = null;
+  private effectiveFilterCache: EffectiveFilterCache | null = null;
 
   async getById(tableName: string, id: string): Promise<IdbObject | undefined> {
     const table = this.db.instance.table(`${tableName}_data`);
@@ -57,20 +63,25 @@ export class DataRepository {
 
     let effectiveFilteredIds: string[] | undefined = undefined;
 
-    // todo gérer ausi du cache ici
     if (selectedInternalFilter) {
-      const filterVals = compoundValues(selectedInternalFilter.index, selectedInternalFilter.value);
-      if (filteredIds?.length) {
-        const compounds = filteredIds.map(id => [id, ...filterVals]);
-        effectiveFilteredIds = await indexedTable
-          .where(selectedInternalFilter.indexWithFilter)
-          .anyOf(compounds)
-          .primaryKeys() as string[];
+      const effectiveCacheKey = buildEffectiveFilterCacheKey(filteredIds, selectedInternalFilter);
+      if (this.effectiveFilterCache?.key === effectiveCacheKey) {
+        effectiveFilteredIds = this.effectiveFilterCache.effectiveFilteredIds;
       } else {
-        effectiveFilteredIds = await indexedTable
-          .where(selectedInternalFilter.index)
-          .equals(filterVals)
-          .primaryKeys() as string[];
+        const filterVals = compoundValues(selectedInternalFilter.index, selectedInternalFilter.value);
+        if (filteredIds?.length) {
+          const compounds = filteredIds.map(id => [id, ...filterVals]);
+          effectiveFilteredIds = await indexedTable
+            .where(selectedInternalFilter.indexWithFilter)
+            .anyOf(compounds)
+            .primaryKeys() as string[];
+        } else {
+          effectiveFilteredIds = await indexedTable
+            .where(selectedInternalFilter.index)
+            .equals(filterVals)
+            .primaryKeys() as string[];
+        }
+        this.effectiveFilterCache = { key: effectiveCacheKey, effectiveFilteredIds };
       }
     } else if (filteredIds) {
       effectiveFilteredIds = filteredIds;
@@ -203,4 +214,13 @@ function compoundValues(index: string, value: Record<string, string | number>): 
 
 function buildCacheKey(ids: string[], orderColumn: string, orderDirection: string): string {
   return `${orderColumn}:${orderDirection}:${ids.slice().sort().join(',')}`;
+}
+
+function buildEffectiveFilterCacheKey(
+  filteredIds: string[] | undefined,
+  selectedInternalFilter: InternalFilter,
+): string {
+  const filterPart = `${selectedInternalFilter.index}:${JSON.stringify(selectedInternalFilter.value)}`;
+  const idsPart = filteredIds?.length ? filteredIds.slice().sort().join(',') : '';
+  return `${filterPart}|${idsPart}`;
 }

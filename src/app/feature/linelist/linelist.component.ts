@@ -63,6 +63,7 @@ export class LinelistComponent {
   total = signal<number>(0);
   totalPages = signal<number>(0);
   expandedRows = signal<Map<string, string>>(new Map());
+  isSearchLoading = signal<boolean>(false);
 
   readonly filterResults: WritableSignal<Map<string, string[]>> = signal(new Map());
 
@@ -79,9 +80,14 @@ export class LinelistComponent {
   selectedInternalFilter = signal<InternalFilter | null>(null);
   private internalFilterInitialized = false;
 
-  readonly reloadFn: () => Promise<void> = () => {
+  readonly reloadFn: () => Promise<void> = async () => {
     this.currentPage.set(1);
-    return this.loadData();
+    this.isSearchLoading.set(true);
+    try {
+      await this.loadData();
+    } finally {
+      this.isSearchLoading.set(false);
+    }
   };
 
   constructor() {
@@ -102,7 +108,12 @@ export class LinelistComponent {
     this.orderColumn.set(event.column);
     this.orderDirection.set(event.direction);
     this.currentPage.set(1);
-    await this.loadData();
+    this.isSearchLoading.set(true);
+    try {
+      await this.loadData();
+    } finally {
+      this.isSearchLoading.set(false);
+    }
   }
 
   async onPageChange(page: number): Promise<void> {
@@ -114,7 +125,8 @@ export class LinelistComponent {
     const f = name ? this.internalFilters().find(f => f.name === name) ?? null : null;
     this.selectedInternalFilter.set(f);
     this.currentPage.set(1);
-    this.loadData();
+    this.isSearchLoading.set(true);
+    this.loadData().finally(() => this.isSearchLoading.set(false));
   }
 
   cellValue(row: IdbObject, key: string): string {

@@ -50,7 +50,7 @@ class Kernel extends BaseKernel
       return $cached;
     }
     $fields = [];
-    for ($f = 1; $f <= 10; $f++) {
+    for ($f = 1; $f <= 300; $f++) {
       $pick = $faker->numberBetween(0, 2);
       $fields["field_{$f}"] = match ($pick) {
         0 => null,
@@ -340,6 +340,8 @@ class Kernel extends BaseKernel
             'bid' => sprintf('%s#%02d', $caseBid, $s),
             'caseId' => $caseUlid,
             'finalResult' => $finalResult,
+            'itdResult' => $faker->randomElement($finalResults),
+            'isolationResult' => $faker->randomElement($finalResults),
             'createdAt' => $createdAt,
           ], $this->makeExtraFields($faker));
           $collected++;
@@ -414,6 +416,8 @@ class Kernel extends BaseKernel
               'subColumns' => [
                 ['type' => 'title', 'key' => 'bid', 'label' => 'Specimen BID'],
                 ['type' => 'enum', 'key' => 'finalResult', 'label' => 'Final result', 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
+                ['type' => 'enum', 'key' => 'itdResult', 'label' => 'ITD result', 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
+                ['type' => 'enum', 'key' => 'isolationResult', 'label' => 'Isolation result', 'containsVariants' => ['WPV1' => 'danger', 'WPV2' => 'danger', 'WPV3' => 'danger']],
                 ['type' => 'date', 'key' => 'createdAt', 'label' => 'Created At', 'format' => 'dd/MM/yyyy'],
               ],
             ],
