@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architecture — WebIFA Dexie</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+    <style>
+      pre code.hljs { border-radius: 0.5rem; font-size: 0.8rem; }
+      .toc-link { transition: color 0.15s, border-color 0.15s; }
+      .toc-link.active { color: #3b82f6; border-left-color: #3b82f6; font-weight: 600; }
+    </style>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 fixed top-0 left-0 right-0 z-50">
+      <div class="max-w-screen-2xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+            </svg>
+          </div>
+          <span class="text-lg font-semibold text-gray-900 dark:text-white">WebIFA Dexie</span>
+        </div>
+        <span class="text-gray-400">/</span>
+        <span class="text-sm text-gray-600 dark:text-gray-400">Architecture</span>
+        <span class="ml-auto inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+          IndexedDB + Dexie
+        </span>
+      </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto pt-16 flex">
+
+      <!-- Sidebar TOC -->
+      <aside class="hidden lg:block w-64 shrink-0 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-4 pl-4">
+        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Sur cette page</p>
+        <nav class="space-y-1 text-sm">
+          <a href="#vue-ensemble" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Vue d'ensemble</a>
+          <a href="#deux-stores" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">Deux stores par table</a>
+          <a href="#phase-1" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Phase 1 — Fetch</a>
+          <a href="#phase-1-1" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">1.1 Fetch paginé</a>
+          <a href="#phase-1-2" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">1.2 Champs indexés</a>
+          <a href="#phase-1-3" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">1.3 Multi-entrées</a>
+          <a href="#phase-1-4" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">1.4 Enrichissement</a>
+          <a href="#phase-2" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Phase 2 — Filters</a>
+          <a href="#phase-2-1" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">2.1 Types de filtres</a>
+          <a href="#phase-2-2" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">2.2 Filtre texte</a>
+          <a href="#phase-2-3" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">2.3 Filtre select</a>
+          <a href="#phase-2-4" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">2.4 Combinaison AND</a>
+          <a href="#phase-3" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Phase 3 — InternalFilters</a>
+          <a href="#phase-3-1" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">3.1 Configuration</a>
+          <a href="#phase-3-2" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">3.2 Résolution</a>
+          <a href="#phase-3-3" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">3.3 Comparaison</a>
+          <a href="#cache" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Cache & navigation</a>
+          <a href="#cache-1" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">effectiveFilterCache</a>
+          <a href="#cache-2" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">filteredOrderCache</a>
+          <a href="#cache-hit" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">Navigation (cache hit)</a>
+          <a href="#invalidation" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700 ml-3">Invalidation</a>
+          <a href="#flux" class="toc-link block py-1 pl-3 border-l-2 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-400 dark:text-gray-400 dark:border-gray-700">Flux complet</a>
+        </nav>
+      </aside>
+
+      <!-- Main content -->
+      <main class="flex-1 min-w-0 py-8 px-4 lg:px-8 max-w-4xl">
+
+        <!-- Hero -->
+        <div class="mb-10">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">Architecture — WebIFA Dexie</h1>
+          <p class="text-lg text-gray-600 dark:text-gray-400">
+            Démonstration de faisabilité : un volume important de données chargé dans IndexedDB, consulté avec des filtres complexes, un tri et une pagination — avec de bonnes performances côté navigateur.
+          </p>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- VUE D'ENSEMBLE -->
+        <!-- ================================================================ -->
+        <section id="vue-ensemble" class="mb-12 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center dark:bg-blue-900 dark:text-blue-300">∑</span>
+            Vue d'ensemble
+          </h2>
+
+          <!-- Flow diagram -->
+          <div class="bg-gray-900 rounded-xl p-6 font-mono text-sm text-green-400 mb-6 overflow-x-auto">
+            <pre>API REST
+   │  (TanStack Query — fetch unique par page)
+   ▼
+DataFetchRepository
+   ├── &lt;table&gt;_data      ← enregistrements complets, clé primaire uniquement
+   └── &lt;table&gt;_indexed   ← projection légère, tous les champs indexés
+          │
+          └── enrichIndexed() ← jointure des champs étrangers (post-fetch)
+
+Utilisateur
+   ├── filters           → IDs via requêtes Dexie → intersection AND
+   ├── internalFilters   → IDs via index composé Dexie
+   └── tri / page
+          │
+          ▼
+   DataRepository.getPaginated()
+          ├── effectiveFilterCache  (intersection internalFilter × filteredIds)
+          └── filteredOrderCache    (tri + découpage en pages)</pre>
+          </div>
+
+          <!-- Two stores -->
+          <div id="deux-stores" class="scroll-mt-20">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Deux stores par table</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Pour chaque table logique, deux object stores IndexedDB sont créés
+              <code class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1.5 py-0.5 rounded text-sm">db.service.ts:37-39</code> :
+            </p>
+            <pre><code class="language-typescript">schema[`${table}_data`]    = 'id';              // Enregistrement complet, clé primaire seule
+schema[`${table}_indexed`] = indexes.join(', '); // Projection légère, tous les index déclarés</code></pre>
+
+            <div class="mt-5 mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Exemple</span>
+              <span class="ml-2 text-sm text-gray-500">— table <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">isolement</code> avec les index <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">["id", "+createdAt", "statut", "[statut+annee]", "[id+statut+annee]"]</code></span>
+            </div>
+            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <tr>
+                    <th class="px-4 py-3">Store</th>
+                    <th class="px-4 py-3">Contenu</th>
+                    <th class="px-4 py-3">Index</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="bg-white border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <td class="px-4 py-3 font-mono text-blue-600 dark:text-blue-400 whitespace-nowrap">isolement_data</td>
+                    <td class="px-4 py-3 font-mono text-xs">{ id, patient_id, statut, date, commentaire, … }</td>
+                    <td class="px-4 py-3"><span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-mono">id</span> seulement</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 font-mono text-blue-600 dark:text-blue-400 whitespace-nowrap">isolement_indexed</td>
+                    <td class="px-4 py-3 font-mono text-xs">{ id, createdAt, statut, annee }</td>
+                    <td class="px-4 py-3 text-xs font-mono">id, createdAt, statut, [statut+annee], [id+statut+annee]</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+              <p class="text-sm text-blue-800 dark:text-blue-300">
+                <strong>_data</strong> est interrogé uniquement pour récupérer les enregistrements complets à afficher.<br/>
+                <strong>_indexed</strong> est interrogé pour tout le reste : filtrage, tri, recherche.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- PHASE 1 -->
+        <!-- ================================================================ -->
+        <section id="phase-1" class="mb-12 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center justify-center dark:bg-purple-900 dark:text-purple-300">1</span>
+            Phase 1 — Fetch et stockage en IndexedDB
+          </h2>
+
+          <div id="phase-1-1" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">1.1 Fetch paginé depuis l'API</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">DataFetchRepository.fetchAndStore()</code> parcourt toutes les pages de l'API et les insère en bulk dans IndexedDB.
+              TanStack Query sert de cache HTTP : chaque page n'est fetchée <strong>qu'une seule fois</strong> par session.
+            </p>
+            <pre><code class="language-typescript">// data-fetch.repository.ts:104-113
+const response = await this.queryClient.fetchQuery&lt;PagedResponse&gt;({
+  queryKey: ['fetch', tableName, page],   // clé de cache unique par table+page
+  queryFn:  () =&gt; fetch(`${url}?page=${page}`).then(r =&gt; r.json()),
+  staleTime: Infinity,  // jamais périmé
+  gcTime:    Infinity,  // jamais évincé du cache
+});</code></pre>
+          </div>
+
+          <div id="phase-1-2" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">1.2 Extraction des champs indexés</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Pour chaque enregistrement, seuls les champs référencés dans les index sont conservés dans <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">_indexed</code>
+              <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">data-fetch.repository.ts:115-132</code>.
+            </p>
+            <pre><code class="language-typescript">// Définitions d'index dans la config :
+// ["id", "+createdAt", "statut", "[statut+annee]"]
+//
+// extractIndexedFieldNames() → Set { "id", "createdAt", "statut", "annee" }
+
+const picked = pick(record, indexedFields);
+// record = { id: "abc", statut: "ouvert", annee: 2024, commentaire: "...", meta: {...} }
+// picked = { id: "abc", statut: "ouvert", annee: 2024, createdAt: "2024-03-01" }</code></pre>
+          </div>
+
+          <div id="phase-1-3" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">1.3 Champs multi-entrées (multiEntry)</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Certains champs contiennent plusieurs valeurs séparées par un délimiteur. Ils sont stockés sous forme de tableau pour que Dexie puisse indexer chaque token individuellement
+              <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">data-fetch.repository.ts:122-129</code>.
+            </p>
+            <pre><code class="language-typescript">// Config : multiEntry: { isolement: { bacteries: "," } }
+//
+// API renvoie : { bacteries: "SARM,ERV" }
+// Stocké comme : { bacteries: ["SARM,ERV", "SARM", "ERV"] }
+//                                ↑ valeur originale  ↑ tokens</code></pre>
+            <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
+              <p class="text-sm text-green-800 dark:text-green-300">
+                Un filtre <code class="bg-green-100 dark:bg-green-900 px-1 rounded">searchByExactValue("isolement", "bacteries", "SARM")</code>
+                retrouve cet enregistrement même si la valeur brute est <code class="bg-green-100 dark:bg-green-900 px-1 rounded">"SARM,ERV"</code>.
+              </p>
+            </div>
+          </div>
+
+          <div id="phase-1-4" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">1.4 Enrichissement des champs étrangers (enrichIndexed)</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Après le chargement de toutes les tables, <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">enrichIndexed()</code>
+              dénormalise les valeurs étrangères dans <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">_indexed</code> pour permettre le tri et le filtrage sans jointure à la volée.
+            </p>
+            <pre><code class="language-typescript">// Config foreignFields pour la table "isolement" :
+// { "nom_patient": { foreignTable: "patient", foreignKey: "patient_id", property: "nom" } }
+
+// Algorithme :
+// 1. Construit Map&lt;id, record&gt; pour chaque table étrangère (une seule fois)
+// 2. Pour chaque enregistrement isolement_indexed, résout la valeur :
+//    record["nom_patient"] = patientMap.get(record["patient_id"])?.["nom"] ?? null
+// 3. Écrit en bulk par lots de 500
+
+// Avant : { id: "abc", statut: "ouvert", patient_id: "p42", nom_patient: null }
+// Après  : { id: "abc", statut: "ouvert", patient_id: "p42", nom_patient: "Dupont" }</code></pre>
+            <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              Le champ <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">nom_patient</code> peut maintenant être trié ou filtré directement dans <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">_indexed</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- PHASE 2 -->
+        <!-- ================================================================ -->
+        <section id="phase-2" class="mb-12 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-green-100 text-green-700 text-sm font-bold flex items-center justify-center dark:bg-green-900 dark:text-green-300">2</span>
+            Phase 2 — Filtres utilisateur (filters)
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            Les filtres sont définis dans la config et rendus comme des composants Angular indépendants. Chacun produit une liste d'IDs correspondants et la publie dans le signal <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">filterResults</code> du linelist.
+          </p>
+
+          <div id="phase-2-1" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">2.1 Types de filtres disponibles</h3>
+            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <tr>
+                    <th class="px-4 py-3">Type</th>
+                    <th class="px-4 py-3">Mécanisme Dexie</th>
+                    <th class="px-4 py-3">Exemple d'usage</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">text</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">startsWithIgnoreCase() sur N champs</td>
+                    <td class="px-4 py-3">Recherche par nom de patient</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3"><span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">select</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">equals() ou anyOf() (multi-select)</td>
+                    <td class="px-4 py-3">Filtre par statut</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">foreignKey</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">Autocomplete → equals() sur FK</td>
+                    <td class="px-4 py-3">Filtre par patient lié</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3"><span class="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-orange-900 dark:text-orange-300">dateRange</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">between() (borne inclusive)</td>
+                    <td class="px-4 py-3">Filtrer par année ou plage de dates</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="phase-2-2" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">2.2 Exemple : filtre texte</h3>
+            <pre><code class="language-typescript">// Config :
+// { type: "text", key: "recherche", fields: ["nom_patient", "identifiant"] }
+
+// data.repository.ts:246-263
+async searchByText(tableName, fields, term) {
+  // Requêtes parallèles sur chaque champ indexé
+  const results = await Promise.all(
+    fields.map(field =&gt;
+      table.where(field).startsWithIgnoreCase(term).primaryKeys()
+    )
+  );
+  // Union des résultats (OR entre champs)
+  const union = new Set&lt;string&gt;();
+  for (const keys of results) keys.forEach(k =&gt; union.add(k));
+  return [...union];
+}
+
+// "dup" → cherche dans "nom_patient" ET "identifiant" → union des IDs trouvés</code></pre>
+          </div>
+
+          <div id="phase-2-3" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">2.3 Exemple : filtre select multi-valeurs</h3>
+            <pre><code class="language-typescript">// Config :
+// { type: "select", key: "statut", field: "statut", multiple: true,
+//   options: [{label: "Ouvert", value: "ouvert"}, {label: "Fermé", value: "ferme"}] }
+
+// data.repository.ts:302-307
+async searchByAnyOf(tableName, field, values) {
+  // values = ["ouvert", "ferme"]
+  return table.where(field).anyOf(values).primaryKeys();
+  // OR entre les valeurs sélectionnées, dans le même filtre
+}</code></pre>
+          </div>
+
+          <div id="phase-2-4" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">2.4 Combinaison des filtres (AND)</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Le linelist combine tous les filtres actifs par <strong>intersection</strong>
+              <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">linelist.component.ts:71-79</code> :
+            </p>
+            <pre><code class="language-typescript">readonly filteredIds = computed&lt;string[] | null&gt;(() =&gt; {
+  const map = this.filterResults(); // Map&lt;filterKey, string[]&gt;
+  if (map.size === 0) return null;
+  const sets = [...map.values()];
+  return sets.reduce((acc, ids) =&gt; {
+    const lookup = new Set(ids);
+    return acc.filter(id =&gt; lookup.has(id)); // AND entre filtres
+  });
+});</code></pre>
+
+            <div class="mt-5 p-4 bg-gray-900 rounded-xl font-mono text-sm text-gray-200 overflow-x-auto">
+              <p class="text-gray-400 mb-2 text-xs">// Exemple concret avec 2 filtres actifs</p>
+              <p>Filtre <span class="text-green-400">"statut"</span> = <span class="text-yellow-400">"ouvert"</span>  → IDs: <span class="text-blue-400">["abc", "def", "ghi"]</span></p>
+              <p>Filtre <span class="text-green-400">"recherche"</span> = <span class="text-yellow-400">"Dup"</span>   → IDs: <span class="text-blue-400">["def", "ghi", "xyz"]</span></p>
+              <p class="text-gray-500 my-1">                                             ↓  intersection (AND)</p>
+              <p>filteredIds                          → IDs: <span class="text-purple-400">["def", "ghi"]</span></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- PHASE 3 -->
+        <!-- ================================================================ -->
+        <section id="phase-3" class="mb-12 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 text-sm font-bold flex items-center justify-center dark:bg-orange-900 dark:text-orange-300">3</span>
+            Phase 3 — Filtres internes (internalFilters)
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            Les <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">internalFilters</code> sont des filtres pré-calculés qui exploitent des <strong>index composés</strong> Dexie. Ils s'affichent sous forme de groupe de radio-boutons et représentent des vues métier prédéfinies (ex. : "Cas actifs 2024").
+          </p>
+
+          <div id="phase-3-1" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">3.1 Configuration</h3>
+            <pre><code class="language-json">{
+  "internalFilters": [
+    {
+      "name": "Cas actifs 2024",
+      "index": "[statut+annee]",
+      "indexWithFilter": "[id+statut+annee]",
+      "value": { "statut": "ouvert", "annee": 2024 },
+      "default": true
+    }
+  ]
+}</code></pre>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><code>[statut+annee]</code></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Utilisé seul quand aucun filtre utilisateur n'est actif.</p>
+              </div>
+              <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><code>[id+statut+annee]</code></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Utilisé pour <strong>croiser</strong> avec les IDs des filtres utilisateur.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="phase-3-2" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">3.2 Résolution dans getPaginated</h3>
+            <pre><code class="language-typescript">// data.repository.ts:148-160
+const filterVals = compoundValues("[statut+annee]", { statut: "ouvert", annee: 2024 });
+// → ["ouvert", 2024]
+
+if (filteredIds?.length) {
+  // Croisement : intersecte les IDs utilisateur avec l'index composé
+  const compounds = filteredIds.map(id =&gt; [id, "ouvert", 2024]);
+  // [["def", "ouvert", 2024], ["ghi", "ouvert", 2024]]
+  effectiveFilteredIds = await indexedTable
+    .where("[id+statut+annee]")
+    .anyOf(compounds)
+    .primaryKeys();
+} else {
+  // Pas de filtre utilisateur : requête directe sur l'index composé
+  effectiveFilteredIds = await indexedTable
+    .where("[statut+annee]")
+    .equals(["ouvert", 2024])
+    .primaryKeys();
+}</code></pre>
+          </div>
+
+          <div id="phase-3-3" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">3.3 Différences clés : filters vs internalFilters</h3>
+            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <tr>
+                    <th class="px-4 py-3">Aspect</th>
+                    <th class="px-4 py-3">Filtres utilisateur</th>
+                    <th class="px-4 py-3">Filtres internes</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tr class="bg-white dark:bg-gray-800"><td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">Affichage</td><td class="px-4 py-3">Champs de saisie (texte, select, date)</td><td class="px-4 py-3">Groupe de radio-boutons</td></tr>
+                  <tr class="bg-white dark:bg-gray-800"><td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">Évaluation</td><td class="px-4 py-3">Intersection en mémoire (Set JS)</td><td class="px-4 py-3">Requête sur index composé Dexie</td></tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">Complexité</td>
+                    <td class="px-4 py-3"><span class="font-mono bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-1.5 py-0.5 rounded text-xs">O(n)</span> par filtre</td>
+                    <td class="px-4 py-3"><span class="font-mono bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-1.5 py-0.5 rounded text-xs">O(log n)</span> via B-tree IndexedDB</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800"><td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">Combinaison</td><td class="px-4 py-3">AND entre tous les filtres actifs</td><td class="px-4 py-3">Intersecte avec l'ensemble des filtres actifs</td></tr>
+                  <tr class="bg-white dark:bg-gray-800"><td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">Usage</td><td class="px-4 py-3">Filtres dynamiques saisis par l'utilisateur</td><td class="px-4 py-3">Vues métier statiques pré-optimisées</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- CACHE -->
+        <!-- ================================================================ -->
+        <section id="cache" class="mb-12 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold flex items-center justify-center dark:bg-yellow-900 dark:text-yellow-300">⚡</span>
+            Cache et navigation entre les pages
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            Changer de page sans modifier les filtres ni le tri doit être <strong>instantané</strong>.
+            <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm">DataRepository</code> maintient deux caches en mémoire.
+          </p>
+
+          <div id="cache-1" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Cache 1 — effectiveFilterCache</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Mémoïse le résultat de l'intersection entre les filtres utilisateur et l'internalFilter (requête coûteuse sur index composé).
+            </p>
+            <pre><code class="language-typescript">// Clé de cache (data.repository.utils.ts:32-39) :
+// "isolement:[statut+annee]:{"statut":"ouvert","annee":2024}|abc,def,ghi"
+//    ↑ table     ↑ index interne + valeurs               ↑ IDs filtres utilisateur (triés)
+
+// data.repository.ts:144-161
+if (this.effectiveFilterCache?.key === effectiveCacheKey) {
+  effectiveFilteredIds = this.effectiveFilterCache.effectiveFilteredIds; // cache HIT
+} else {
+  effectiveFilteredIds = await indexedTable.where(...).anyOf(...).primaryKeys(); // calcul
+  this.effectiveFilterCache = { key: effectiveCacheKey, effectiveFilteredIds };  // mise en cache
+}</code></pre>
+            <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+              <strong>Invalidation :</strong> la clé change dès que la table, l'internalFilter sélectionné, ou l'ensemble des IDs filtrés change.
+            </div>
+          </div>
+
+          <div id="cache-2" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Cache 2 — filteredOrderCache</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Mémoïse la liste ordonnée complète des IDs et la découpe en pages.
+            </p>
+            <pre><code class="language-typescript">// Clé de cache (data.repository.utils.ts:21-23) :
+// "isolement:createdAt:DESC:abc,def,ghi"
+//    ↑ table  ↑ colonne  ↑ sens  ↑ IDs effectifs (triés)
+
+// data.repository.ts:171-185
+if (!cache || cache.key !== cacheKey || cache.pageSize !== pageSize) {
+  // 1. Récupère tous les IDs dans l'ordre de tri via Dexie
+  const allOrderedIds = await indexedTable.orderBy(orderColumn).primaryKeys();
+
+  // 2. Filtre pour ne garder que les IDs autorisés
+  const allowedSet = new Set(effectiveFilteredIds);
+  const orderedFilteredIds = allOrderedIds.filter(id =&gt; allowedSet.has(id));
+
+  // 3. Pré-calcule toutes les pages
+  const pages = new Map&lt;number, string[]&gt;();
+  for (let p = 1; p &lt;= Math.ceil(orderedFilteredIds.length / pageSize); p++) {
+    const off = (p - 1) * pageSize;
+    pages.set(p, orderedFilteredIds.slice(off, off + pageSize));
+  }
+
+  this.filteredOrderCache = { key: cacheKey, orderedFilteredIds, pageSize, pages };
+}</code></pre>
+          </div>
+
+          <div id="cache-hit" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Navigation entre les pages (cache hit)</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Une fois les caches chauds, changer de page est O(1) :</p>
+            <pre><code class="language-typescript">// data.repository.ts:188-196
+const pageIds = cache.pages.get(page) ?? []; // O(1) — lookup dans Map pré-calculée
+
+// Récupère les enregistrements complets depuis _data par leurs IDs
+const recordMap = new Map(
+  (await dataTable.where('id').anyOf(pageIds).toArray())
+    .map(r =&gt; [r['id'], r])
+);
+// Respecte l'ordre original des IDs (ordre de tri)
+const rows = pageIds.map(id =&gt; recordMap.get(id));</code></pre>
+
+            <div class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chemin sans filtre</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Quand aucun filtre n'est actif, on bypasse entièrement les caches et on utilise la pagination native Dexie :
+              </p>
+              <pre class="mt-2"><code class="language-typescript">// Directement offset + limit sur l'index de tri
+collection.offset((page - 1) * pageSize).limit(pageSize).primaryKeys()</code></pre>
+            </div>
+          </div>
+
+          <div id="invalidation" class="scroll-mt-20 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Résumé : ce qui invalide chaque cache</h3>
+            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table class="w-full text-sm text-center text-gray-600 dark:text-gray-400">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <tr>
+                    <th class="px-4 py-3 text-left">Événement</th>
+                    <th class="px-4 py-3">effectiveFilterCache</th>
+                    <th class="px-4 py-3">filteredOrderCache</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 text-left">Changement de page</td>
+                    <td class="px-4 py-3 text-gray-400">—</td>
+                    <td class="px-4 py-3 text-gray-400">—</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 text-left">Changement de filtre utilisateur</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 text-left">Changement d'internalFilter</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 text-left">Changement de tri (colonne/sens)</td>
+                    <td class="px-4 py-3 text-gray-400">—</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                  </tr>
+                  <tr class="bg-white dark:bg-gray-800">
+                    <td class="px-4 py-3 text-left">Changement de table</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                    <td class="px-4 py-3 text-green-600 dark:text-green-400 font-bold">✓</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- FLUX COMPLET -->
+        <!-- ================================================================ -->
+        <section id="flux" class="mb-16 scroll-mt-20">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-gray-200 text-gray-700 text-sm font-bold flex items-center justify-center dark:bg-gray-700 dark:text-gray-300">▶</span>
+            Flux complet — exemple de navigation
+          </h2>
+
+          <ol class="relative border-l border-gray-200 dark:border-gray-700 space-y-8 ml-3">
+
+            <li class="ml-6">
+              <span class="absolute -left-3 flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full dark:bg-blue-900 ring-4 ring-white dark:ring-gray-900 text-blue-700 dark:text-blue-300 text-xs font-bold">1</span>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Chargement initial</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Fetch de toutes les pages API, stockage en bulk, enrichissement des champs étrangers.</p>
+              <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400">
+                fetchAndStore() → API pages 1..N → bulkPut dans _data + _indexed<br/>
+                enrichIndexed() → jointures étrangères → bulkPut dans _indexed
+              </div>
+            </li>
+
+            <li class="ml-6">
+              <span class="absolute -left-3 flex items-center justify-center w-6 h-6 bg-purple-100 rounded-full dark:bg-purple-900 ring-4 ring-white dark:ring-gray-900 text-purple-700 dark:text-purple-300 text-xs font-bold">2</span>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Sélection d'un internalFilter "Cas actifs 2024"</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Les deux caches sont froids — calcul complet.</p>
+              <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400">
+                getPaginated(page=1, order=createdAt DESC, internalFilter={statut:ouvert, annee:2024})<br/>
+                <span class="text-yellow-400">├── effectiveFilterCache MISS</span> → WHERE [statut+annee] = ["ouvert", 2024] → 1 200 IDs<br/>
+                <span class="text-yellow-400">├── filteredOrderCache MISS</span>  → orderBy(createdAt).reverse() → 1 200 IDs ordonnés<br/>
+                <span class="text-gray-500">│                            → pré-calcul des 120 pages de 10</span><br/>
+                └── pages.get(1) → 10 IDs → _data.anyOf(10 IDs) → affichage
+              </div>
+            </li>
+
+            <li class="ml-6">
+              <span class="absolute -left-3 flex items-center justify-center w-6 h-6 bg-green-100 rounded-full dark:bg-green-900 ring-4 ring-white dark:ring-gray-900 text-green-700 dark:text-green-300 text-xs font-bold">3</span>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Navigation page 5 <span class="text-sm font-normal text-green-600 dark:text-green-400">— O(1)</span></h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Les deux caches sont chauds — aucun recalcul.</p>
+              <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400">
+                getPaginated(page=5, ...)<br/>
+                <span class="text-blue-400">├── effectiveFilterCache HIT</span>  → 1 200 IDs (inchangé)<br/>
+                <span class="text-blue-400">├── filteredOrderCache HIT</span>    → pages.get(5) → 10 IDs (O(1))<br/>
+                └── _data.anyOf(10 IDs) → affichage
+              </div>
+            </li>
+
+            <li class="ml-6">
+              <span class="absolute -left-3 flex items-center justify-center w-6 h-6 bg-orange-100 rounded-full dark:bg-orange-900 ring-4 ring-white dark:ring-gray-900 text-orange-700 dark:text-orange-300 text-xs font-bold">4</span>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Ajout d'un filtre texte "Dup"</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Les clés de cache changent — recalcul complet.</p>
+              <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400">
+                searchByText() → 340 IDs → filterResults → filteredIds = 340 IDs<br/>
+                getPaginated(page=1, filteredIds=[340 IDs], internalFilter=...)<br/>
+                <span class="text-yellow-400">├── effectiveFilterCache MISS</span> → WHERE [id+statut+annee].anyOf(340 tuples) → 87 IDs<br/>
+                <span class="text-yellow-400">├── filteredOrderCache MISS</span>  → tri + découpage → 9 pages<br/>
+                └── pages.get(1) → affichage
+              </div>
+            </li>
+
+            <li class="ml-6">
+              <span class="absolute -left-3 flex items-center justify-center w-6 h-6 bg-green-100 rounded-full dark:bg-green-900 ring-4 ring-white dark:ring-gray-900 text-green-700 dark:text-green-300 text-xs font-bold">5</span>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Navigation pages 2, 3, 4… <span class="text-sm font-normal text-green-600 dark:text-green-400">— O(1) à chaque fois</span></h3>
+              <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-blue-400">
+                cache HIT à chaque changement de page → lookup O(1) dans Map pré-calculée
+              </div>
+            </li>
+
+          </ol>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+      hljs.highlightAll();
+
+      // Active TOC link on scroll
+      const sections = document.querySelectorAll('section[id], div[id]');
+      const tocLinks = document.querySelectorAll('.toc-link');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach(l => l.classList.remove('active'));
+            const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+            if (active) active.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+
+      sections.forEach(s => observer.observe(s));
+    </script>
+  </body>
+</html>
