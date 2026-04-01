@@ -1,59 +1,59 @@
 # WebifaDexie
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.0.
+A prototype demonstrating large-scale data management in the browser using IndexedDB (Dexie), Angular 21, and TanStack Query. The backend is a lightweight PHP/Symfony API that generates fake epidemiological data.
 
-## Development server
+## Prerequisites
 
-To start a local development server, run:
+- **Node.js** with npm 11+
+- **PHP 8.5+** with the `apcu` extension enabled
+- **Composer**
 
-```bash
-ng serve
+## Project structure
+
+```
+/
+├── api/          # PHP/Symfony micro-kernel backend
+└── src/          # Angular frontend
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Starting the backend (PHP API)
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+The API serves fake data (cases, specimens, areas) and relies on APCu for in-memory caching.
 
 ```bash
-ng generate component component-name
+cd api
+php -d apc.enable_cli=1 -S localhost:8000 index.php
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+> The API will be available at `http://localhost:8000`. APCu must be enabled — verify with `php -m | grep apcu`.
+
+Available endpoints:
+- `GET /api/config` — application configuration and linelist schema
+- `GET /api/data/areas?page=1` — paginated area records (30 000 total)
+- `GET /api/data/cases?page=1` — paginated case records (30 000 total)
+- `GET /api/data/specimens?page=1` — paginated specimen records (60 000 total)
+
+## Starting the frontend (Angular)
 
 ```bash
-ng generate --help
+npm install
+npm start
 ```
 
-## Building
+The application will be available at `http://localhost:4200/` and reloads automatically on file changes.
 
-To build the project run:
+## Building for production
 
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Output is placed in the `dist/` directory.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Running tests
 
 ```bash
-ng test
+npm test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Uses [Vitest](https://vitest.dev/) as the test runner.
